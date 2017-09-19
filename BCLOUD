@@ -1,0 +1,1 @@
+BUILD_SUBMITTER -x -m baidu/nlp-dqa/rc_open_source -c "cd baidu/nlp-dqa/rc_open_source && mkdir output &&cp BCLOUD ./output/" -u ./
