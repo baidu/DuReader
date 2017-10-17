@@ -1,4 +1,16 @@
 # -*- coding:utf8 -*-
+###############################################################################
+#
+# Copyright (c) 2017 Baidu.com, Inc. All Rights Reserved
+#
+###############################################################################
+"""
+This module implements the BiDAF algorithm described in
+https://arxiv.org/abs/1611.01603
+
+Authors: liuyuan(liuyuan04@baidu.com)
+Data: 2017/09/20 12:00:00
+"""
 import paddle.v2.layer as layer
 import paddle.v2.attr as Attr
 import paddle.v2.activation as Act
