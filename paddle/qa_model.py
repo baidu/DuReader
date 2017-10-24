@@ -55,37 +55,35 @@ class QAModel(object):
             if len(self.inputs) < 5:
                 raise ValueError(r'''Input schema: expected vs given:
                          {} vs {}'''.format(expected, self.inputs))
-            self.start_labels = [
-                    layer.data(name=self.inputs[i],
-                               type=data_type.dense_vector_sequence(1))
-                    for i in range(1+2*self.doc_num, 1+3*self.doc_num)
-                    ]
+            self.start_labels = []
+            for i in range(1 + 2 * self.doc_num, 1 + 3 * self.doc_num):
+                self.start_labels.append(
+                        layer.data(name=self.inputs[i],
+                            type=data_type.dense_vector_sequence(1)))
             self.start_label = reduce(
                     lambda x, y: layer.seq_concat(a=x, b=y),
                     self.start_labels)
-
-            self.end_labels = [
-                    layer.data(name=self.inputs[i],
-                               type=data_type.dense_vector_sequence(1))
-                    for i in range(1+3*self.doc_num, 1+4*self.doc_num)
-                    ]
-
+            self.end_labels = []
+            for i in range(1 + 3 * self.doc_num, 1 + 4 * self.doc_num):
+                self.end_labels.append(
+                        layer.data(name=self.inputs[i],
+                            type=data_type.dense_vector_sequence(1)))
             self.end_label = reduce(
                     lambda x, y: layer.seq_concat(a=x, b=y),
                     self.end_labels)
         self.q_ids = layer.data(
-                     name=self.inputs[0],
-                     type=data_type.integer_value_sequence(self.vocab_size))
-        self.p_ids = [
-                layer.data(name=self.inputs[i],
-                    type=data_type.integer_value_sequence(self.vocab_size))
-                for i in range(1, 1+self.doc_num)
-                ]
-        self.para_lens = [
-                layer.data(name=self.inputs[i],
-                    type=data_type.dense_vector_sequence(1))
-                for i in range(1+self.doc_num, 1+2*self.doc_num)
-                ]
+                name=self.inputs[0],
+                type=data_type.integer_value_sequence(self.vocab_size))
+        self.p_ids = []
+        for i in range(1, 1 + self.doc_num):
+            self.p_ids.append(
+                    layer.data(name=self.inputs[i],
+                        type=data_type.integer_value_sequence(self.vocab_size)))
+        self.para_lens = []
+        for i in range(1 + self.doc_num, 1 + 2 * self.doc_num):
+            self.para_lens.append(
+                    layer.data(name=self.inputs[i],
+                        type=data_type.dense_vector_sequence(1)))
         self.para_len = reduce(lambda x, y: layer.seq_concat(a=x, b=y),
                 self.para_lens)
 
@@ -212,10 +210,10 @@ class QAModel(object):
 
             for ins in batch_input:
                 ins = ins[-1]
-                len_slice = lens[idx_len:idx_len+doc_num]
+                len_slice = lens[idx_len:idx_len + doc_num]
                 prob_len = int(sum(len_slice))
-                start_prob_slice = probs[idx_prob:idx_prob+prob_len]
-                end_prob_slice = probs[idx_prob+prob_len:idx_prob+2*prob_len]
+                start_prob_slice = probs[idx_prob:idx_prob + prob_len]
+                end_prob_slice = probs[idx_prob + prob_len:idx_prob + 2 * prob_len]
                 start_idx = start_prob_slice.argmax(axis=0)
                 if start_idx < prob_len - 1:
                     rest_slice = end_prob_slice[start_idx:]
@@ -223,7 +221,7 @@ class QAModel(object):
                 else:
                     end_idx = start_idx
                 pred_tokens = [] if start_idx > end_idx \
-                        else ins['tokens'][start_idx:end_idx+1]
+                        else ins['tokens'][start_idx:end_idx + 1]
                 pred = ' '.join(pred_tokens)
                 ref = ins['answer']
                 idx_len += doc_num

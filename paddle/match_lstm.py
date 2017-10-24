@@ -154,11 +154,13 @@ class MatchLstm(QAModel):
 
         q_proj_left = layer.fc(size=self.emb_dim * 2,
                                bias_attr=False,
-                               param_attr=Attr.Param(self.name+'_left_'+'.wq'),
+                               param_attr=Attr.Param(
+                                   self.name + '_left_' + '.wq'),
                                input=q_enc)
         q_proj_right = layer.fc(size=self.emb_dim * 2,
                                 bias_attr=False,
-                                param_attr=Attr.Param(self.name+'_right_'+'.wq'),
+                                param_attr=Attr.Param(
+                                    self.name + '_right_' + '.wq'),
                                 input=q_enc)
         for i, p in enumerate(p_encs):
             left_out = self.recurrent_group(
