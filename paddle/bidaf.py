@@ -21,15 +21,8 @@ from qa_model import QAModel
 
 class BiDAF(QAModel):
     """
-    Implements BiDAF network. Inherents from QAModel.
+    Implements BiDAF. Inherents from QAModel.
     """
-    def create_shared_params(self):
-        """
-        Creates parameters that shared by multiple layers.
-        """
-        self.emb_param = Attr.Param(name=self.name + '.embs',
-                                    is_static=False)
-
     def __get_enc(self, input, type='q'):
         embs = self.get_embs(input)
         enc = networks.bidirectional_lstm(
@@ -72,6 +65,18 @@ class BiDAF(QAModel):
                               pooling_type=paddle.pooling.Sum())
         return u_ctx
 
+    def __union_step(self, h_cur, u):
+        s = self.__step_basic(h_cur, u)
+        step_max = layer.pooling(input=s, pooling_type=paddle.pooling.Max())
+        with layer.mixed(size=1,
+                         bias_attr=False,
+                         act=Act.SequenceSoftmax()) as h_weights:
+            h_weights += layer.identity_projection(s)
+        applied_weights = layer.scaling(input=u, weight=h_weights)
+        u_ctx = layer.pooling(input=applied_weights,
+                              pooling_type=paddle.pooling.Sum())
+        return [step_max, u_ctx]
+
     def __beta(self, h, u_expr, h_expr):
         with layer.mixed(bias_attr=False) as dot_h_u_expr:
             dot_h_u_expr += layer.dotmul_operator(a=h, b=u_expr)
@@ -79,6 +84,21 @@ class BiDAF(QAModel):
             dot_h_h_expr += layer.dotmul_operator(a=h, b=h_expr)
         cat_all = layer.concat(input=[h, u_expr, dot_h_u_expr, dot_h_h_expr])
         return cat_all
+
+    def __attention_flow2(self, h, u):
+        bs, u_expr = layer.recurrent_group(
+                 input=[h, layer.StaticInput(u)],
+                 step=self.__u_step,
+                 reverse=False)
+        b_weights = layer.mixed(act=Act.SequenceSoftmax(),
+                    bias_attr=False,
+                    input=layer.identity_projection(bs))
+        h_step_scaled = layer.scaling(input=h, weight=b_weights)
+        h_step = layer.pooling(input=h_step_scaled,
+                               pooling_type=paddle.pooling.Sum())
+        h_expr = layer.expand(input=h_step, expand_as=h)
+        g = self.__beta(h, u_expr, h_expr)
+        return g
 
     def __attention_flow(self, h, u):
         bs = layer.recurrent_group(
@@ -101,13 +121,19 @@ class BiDAF(QAModel):
 
     def network(self):
         """
-        Implements the BiDAF network.
+        Implements the whole network.
+
+        Returns:
+            A tuple of LayerOutput objects containing the start and end
+            probability distributions respectively.
         """
+        self.check_and_create_data()
+        self.create_shared_params()
         u = self.__get_enc(self.q_ids, type='q')
         m1s = []
         m2s = []
         for p in self.p_ids:
-            h = self.__get_enc(p, type='p')
+            h = self.__get_enc(p, type='q')
             g = self.__attention_flow(h, u)
             m1 = networks.bidirectional_lstm(
                  fwd_mat_param_attr=Attr.Param('_f_m1_mat.w'),
