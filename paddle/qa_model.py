@@ -180,14 +180,10 @@ class QAModel(object):
         Returns:
             A probability distribution over temporal axis.
         """
-        latent_param = None
-        if fix_latent_param:
-            latent_param = Attr.Param(self.name + '_pointer_lat.w')
         latent = layer.fc(size=input.size / 2,
                           input=input,
                           act=Act.Tanh(),
-                          bias_attr=False,
-                          param_attr=latent_param)
+                          bias_attr=False)
         probs = layer.fc(
                 name=name,
                 size=1,
@@ -240,7 +236,7 @@ class QAModel(object):
                 pred_list.append(pred_obj)
                 ref_list.append(ref_obj)
                 ins_cnt += 1
-        return pred_obj, ref_obj, stored_obj
+        return ref_list, pred_list, objs
 
     def __read_list(self, infer_file):
         ref_list = []
