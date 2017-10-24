@@ -21,7 +21,7 @@ from qa_model import QAModel
 
 class BiDAF(QAModel):
     """
-    Implements BiDAF. Inherents from QAModel.
+    Implements BiDAF.
     """
     def __get_enc(self, input, type='q'):
         embs = self.get_embs(input)
