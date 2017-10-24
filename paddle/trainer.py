@@ -103,7 +103,6 @@ class Trainer(object):
                 np.absolute(self.parameters.get(p)).mean(),
                 self.parameters.get(p).max()))
 
-
     def __event_handler(self, event):
         if isinstance(event, paddle.event.EndIteration):
             self.costs.append(event.cost)
@@ -174,14 +173,15 @@ class Trainer(object):
         if self.args.pre_emb.strip() != '':
             embeddings = np.loadtxt(self.args.pre_emb,
                     dtype=float)[:self.args.vocab_size]
-            self.parameters.set(self.model.name+'.embs', embeddings)
+            self.parameters.set(self.model.name + '.embs', embeddings)
             self.logger.info('init emb from {} to {}'.format(
                 self.args.pre_emb,
-                self.model.name+'.embs'))
+                self.model.name + '.embs'))
 
         self.trainer = paddle.trainer.SGD(cost=model_out,
                                           parameters=self.parameters,
                                           update_equation=optimizer)
+
 
     def run(self):
         """

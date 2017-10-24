@@ -65,8 +65,7 @@ class Inferer(object):
             self.parameters = paddle.parameters.Parameters.from_tar(
                               gzip.open(self.args.model_file, 'r'))
         except IOError:
-            self.logger.fatal('can not find: {}'.format(self.args.model_file))
-            raise
+            raise IOError('can not find: {}'.format(self.args.model_file))
         self.inferer = paddle.inference.Inference(
                        output_layer=model_out,
                        parameters=self.parameters)

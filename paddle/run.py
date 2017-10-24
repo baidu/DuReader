@@ -31,13 +31,21 @@ from brc_eval import compute_metrics_from_list
 logger = logging.getLogger("paddle")
 logger.setLevel(logging.INFO)
 
+
 class Algos(object):
+    """
+    Enumerates algorithms that the system supports.
+    """
     BIDAF = 'bidaf'
     MLSTM = 'mlstm'
     RANK = 'rank'
     YESNO = 'yesno'
 
+
 class Env(object):
+    """
+    Prepares data and model.
+    """
     def __init__(self, args):
         self.args = args
         if self.args.is_infer:
@@ -142,7 +150,11 @@ class Env(object):
                       shuffle=False)
         self.datasets = [train_reader, test_reader]
 
+
 def parse_args():
+    """
+    Parses command line arguments.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('--trainset', help='train dataset')
     parser.add_argument('--testset', help='test dataset')
@@ -175,6 +187,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 def run():
     """
     Prepares and runs the whole system.
@@ -188,6 +201,7 @@ def run():
              if not args.is_infer else \
              Inferer(args, model=model, datasets=datasets)
     worker.run()
+
 
 if __name__ == '__main__':
     run()
