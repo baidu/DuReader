@@ -182,7 +182,6 @@ class Trainer(object):
                                           parameters=self.parameters,
                                           update_equation=optimizer)
 
-
     def run(self):
         """
         Runs the whole training process.
