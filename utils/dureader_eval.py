@@ -93,9 +93,10 @@ def read_file(file_name):
             yes_no_answer_dict[q_id_dep] += obj['answer_dep']
             yes_no_answer_dict[q_id_none] += obj['answer_none']
             entity_dict[q_id] += obj['entities']
-    return (basic_answer_dict, yes_no_answer_dict, pos_answer_dict,
+    results = [basic_answer_dict, yes_no_answer_dict, pos_answer_dict,
             neg_answer_dict, dep_answer_dict, none_answer_dict,
-            entit_dict)
+            entit_dict]
+    return results
 
 
 def compute_bleu_rouge(pred_dict, ref_dict, bleu_order):
