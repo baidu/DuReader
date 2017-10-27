@@ -200,7 +200,7 @@ def merge_dict(li_pred, li_ref):
     """
     merge results.
     """
-    def merge_one(a, b):
+    def __merge_one(a, b):
         for k, li in b.items():
             a[k] = a.get(k, [])
             a[k] += li
@@ -209,8 +209,8 @@ def merge_dict(li_pred, li_ref):
 
     pred_list, ref_list = [], []
 
-    pred_dict = reduce(merge_one, li_pred)
-    ref_dict = reduce(merge_one, li_ref)
+    pred_dict = reduce(__merge_one, li_pred)
+    ref_dict = reduce(__merge_one, li_ref)
     assert set(pred_dict.keys()) == set(ref_dict.keys())
     for qid in set(pred_dict.keys()):
         if (len(ref_dict[qid]) == 0 and len(pred_dict[qid]) == 0) \
