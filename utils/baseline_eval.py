@@ -19,11 +19,13 @@ import random
 from brc_eval import compute_metrics_from_list
 
 EMPTY = ''
+
 YESNO_LABELS = {
         'None': 0,
         'Yes': 1,
         'No': 2,
         'Depends': 3}
+
 
 def getid(query):
     """
@@ -33,6 +35,7 @@ def getid(query):
     #print >> sys.stderr, '===', query.encode('utf8'), type(query)
     m.update(query.encode('utf8'))
     return m.hexdigest()
+
 
 def build_yesno_golden(obj):
     """
@@ -61,6 +64,7 @@ def build_yesno_golden(obj):
         ret_list.append(result)
 
     return ret_list
+
 
 def build_yesno_human(obj):
     """
@@ -95,6 +99,7 @@ def build_yesno_human(obj):
 
     return no_dup_list
 
+
 def build_yesno_ctrl(obj):
     """
     Get control experiment result.
@@ -114,6 +119,7 @@ def build_yesno_ctrl(obj):
         ret_list.append(result)
 
     return ret_list
+
 
 def build_yesno_random(obj):
     """
@@ -138,6 +144,7 @@ def build_yesno_random(obj):
         ret_list.append(result)
 
     return ret_list
+
 
 def build_yesno_exp(obj):
     """
@@ -164,6 +171,7 @@ def build_yesno_exp(obj):
 
     return ret_list
 
+
 def build_normal(obj):
     """
     Normal answer result.
@@ -175,6 +183,7 @@ def build_normal(obj):
     ret_list.append(result)
     return ret_list
 
+
 def build_normal_golden(obj):
     """
     build normal golden
@@ -185,6 +194,7 @@ def build_normal_golden(obj):
     result = {qid: answers}
     ret_list.append(result)
     return ret_list
+
 
 def merge_dict(li_pred, li_ref):
     """
@@ -214,6 +224,7 @@ def merge_dict(li_pred, li_ref):
         ref_list.append(obj_ref)
     return pred_list, ref_list
 
+
 def get_metrics(pred_results, ref_results):
     """
     compute metric.
@@ -221,6 +232,7 @@ def get_metrics(pred_results, ref_results):
     pred_list, ref_list = merge_dict(pred_results, ref_results)
     metrics = compute_metrics_from_list(pred_list, ref_list, 4)
     return metrics
+
 
 def main():
     """
