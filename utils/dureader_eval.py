@@ -78,7 +78,7 @@ def read_file(file_name):
 
     Args:
         file_name: the name of the file containing predict result or reference
-                   result.
+                   result, the file should be a zip file.
 
     Returns:
         A dictionary mapping query_id to the result information. The result
@@ -105,21 +105,6 @@ def read_file(file_name):
             for k in keys:
                 results[qid][k] = obj[k]
     return results
-    '''
-    with open(file_name, 'r') as fn:
-        for line in fn:
-            try:
-                obj = json.loads(line.strip())
-            except ValueError:
-                raise ValueError("Every line of data should be legal json")
-            data_check(obj)
-            qid = obj['query_id']
-            assert qid not in results, "Duplicate query_id: {}".format(qid)
-            results[qid] = {}
-            for k in keys:
-                results[qid][k] = obj[k]
-    return results
-    '''
 
 
 def compute_bleu_rouge(pred_dict, ref_dict, bleu_order=4):
