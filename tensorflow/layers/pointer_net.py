@@ -44,6 +44,9 @@ def custom_dynamic_rnn(cell, inputs, inputs_len, initial_state=None):
     f0 = tf.zeros([batch_size], dtype=tf.bool)
 
     def loop_fn(t, prev_s, emit_ta, finished):
+        """
+        the loop function of rnn
+        """
         cur_x = inputs_ta.read(t)
         scores, cur_state = cell(cur_x, prev_s)
 
@@ -130,6 +133,17 @@ class PointerNetDecoder(object):
         self.hidden_size = hidden_size
 
     def decode(self, passage_vectors, query_vectors, init_with_query=True):
+        """
+        Use Pointer Network to compute the probabilities of each position
+        to be start and end of the answer
+        Args:
+            passage_vectors: the encoded passage vectors
+            query_vectors: the encoded query vectors
+            init_with_query: if set to be true,
+                             we will use the query_vectors to init the state of Pointer Network
+        Returns:
+            the probs of evary position to be start and end of the answer
+        """
         with tf.variable_scope('pn_decoder'):
             fake_inputs = tf.zeros([tf.shape(passage_vectors)[0], 2, 1])  # not used
             sequence_len = tf.tile([2], [tf.shape(passage_vectors)[0]])

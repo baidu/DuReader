@@ -51,6 +51,9 @@ class MatchLSTMLayer(object):
         self.hidden_size = hidden_size
 
     def match(self, passage_encodes, query_encodes, p_length, q_length):
+        """
+        Match the passage_encodes with query_encodes using Match-LSTM algorithm
+        """
         with tf.variable_scope('match_lstm'):
             cell_fw = MatchLSTMAttnCell(self.hidden_size, query_encodes)
             cell_bw = MatchLSTMAttnCell(self.hidden_size, query_encodes)
@@ -75,6 +78,9 @@ class AttentionFlowMatchLayer(object):
         self.hidden_size = hidden_size
 
     def match(self, passage_encodes, query_encodes, p_length, q_length):
+        """
+        Match the passage_encodes with query_encodes using Attention Flow Match algorithm
+        """
         with tf.variable_scope('bidaf'):
             sim_matrix = tf.matmul(passage_encodes, query_encodes, transpose_b=True)
             context2query_attn = tf.matmul(tf.nn.softmax(sim_matrix, -1), query_encodes)

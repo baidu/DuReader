@@ -1,4 +1,12 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# author: Yizhong
-# created_at: 07/25/2017 上午10:32
+# -*- coding:utf8 -*-
+###############################################################################
+#
+# Copyright (c) 2017 Baidu.com, Inc. All Rights Reserved
+#
+###############################################################################
+"""
+Empty __init__.py file
+
+Authors: Yizhong Wang(wangyizhong01@baidu.com)
+Date: 2017/09/20 12:00:00
+"""
