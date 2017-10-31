@@ -181,6 +181,7 @@ class DuReaderYesNo(Dataset):
         ret.append(record)
         return ret
 
+
 class DuReaderQA(Dataset):
     """
     Implements parser for QA task.
