@@ -449,9 +449,6 @@ def main(args):
         err = ve
     except AssertionError as ae:
         err = ae
-    except Exception:
-        raise
-
     print format_metrics(metrics, args.task, err)
 
 
