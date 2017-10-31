@@ -173,11 +173,12 @@ class BRCDataset(object):
             vocab: the vocabulary on this dataset
         """
         for data_set in [self.train_set, self.dev_set, self.test_set]:
-            if data_set is not None:
-                for sample in data_set:
-                    sample['query_token_ids'] = vocab.convert_to_ids(sample['query_tokens'])
-                    for passage in sample['passages']:
-                        passage['passage_token_ids'] = vocab.convert_to_ids(passage['passage_tokens'])
+            if data_set is None:
+                continue
+            for sample in data_set:
+                sample['query_token_ids'] = vocab.convert_to_ids(sample['query_tokens'])
+                for passage in sample['passages']:
+                    passage['passage_token_ids'] = vocab.convert_to_ids(passage['passage_tokens'])
 
     def gen_mini_batches(self, set_name, batch_size, pad_id, shuffle=True):
         """
