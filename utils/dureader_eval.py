@@ -72,13 +72,13 @@ def data_check(obj):
                 query_id: {}""".format(obj['quer_id'])
 
 
-def read_file(file_name):
+def read_file(file_name, type='predict'):
     """
     Read predict answers or reference answers from file.
 
     Args:
         file_name: the name of the file containing predict result or reference
-                   result, the file should be a zip file.
+                   result.
 
     Returns:
         A dictionary mapping query_id to the result information. The result
@@ -91,6 +91,9 @@ def read_file(file_name):
     """
     results = {}
     keys = ['answers', 'yesno_answers', 'entities', 'query_type']
+    if type == 'reference':
+        keys += ['source']
+
     zf = zipfile.ZipFile(file_name, 'r')
     for fn in zf.namelist():
         for line in zf.open(fn, 'r'):
@@ -147,7 +150,7 @@ def compute_prf(pred_dict, ref_dict):
     for query_id in ref_query_ids:
         pred_entity_list = pred_dict.get(query_id, [[]])
         assert len(pred_entity_list) == 1, \
-                'the number of entity list for query_id {} is not 1.'.format(query_id)
+            'the number of entity list for query_id {} is not 1.'.format(query_id)
         pred_entity_list = pred_entity_list[0]
         all_ref_entity_lists = ref_dict[query_id]
         best_local_f1 = 0
@@ -183,17 +186,37 @@ def prepare_prf(pred_dict, ref_dict):
     return preds, refs
 
 
-def get_metrics(pred_result, ref_result, task):
+def get_metrics(pred_result, ref_result, task, source):
     """
     Computes metrics.
     """
     metrics = {}
-    if task == 'main' or task == 'yesno' or task == 'all':
-        pred_dict, ref_dict = prepare_bleu(pred_result, ref_result, task)
+
+    ref_result_filtered = {}
+    pred_result_filtered = {}
+    if source == 'both':
+        ref_result_filtered = ref_result
+        pred_result_filtered = pred_result
+    else:
+        for query_id, info in ref_result.items():
+            if info['source'] == source:
+                ref_result_filtered[query_id] = info
+                if query_id in pred_result:
+                    pred_result_filtered[query_id] = pred_result[query_id]
+
+    if task == 'basic' or task == 'yesno' or task == 'all':
+        pred_dict, ref_dict = prepare_bleu(pred_result_filtered,
+                ref_result_filtered,
+                task)
         metrics = compute_bleu_rouge(pred_dict, ref_dict)
     elif task == 'entity':
-        pred_dict, ref_dict = prepare_prf(pred_result, ref_result)
+        pred_dict, ref_dict = prepare_prf(pred_result_filtered,
+                ref_result_filtered)
+        pred_dict_bleu, ref_dict_bleu = prepare_bleu(pred_result_filtered,
+                ref_result_filtered,
+                task)
         metrics = compute_prf(pred_dict, ref_dict)
+        metrics.update(compute_bleu_rouge(pred_dict_bleu, ref_dict_bleu))
     else:
         raise ValueError("Illegal task name: {}".format(task))
 
@@ -207,12 +230,14 @@ def prepare_bleu(pred_result, ref_result, task):
     pred_list, ref_list = [], []
     qids = ref_result.keys()
     for qid in qids:
-        if task == 'main':
-            pred, ref = get_main_result(qid, pred_result, ref_result)
+        if task == 'basic':
+            pred, ref = get_basic_result(qid, pred_result, ref_result)
         elif task == 'yesno':
             pred, ref = get_yesno_result(qid, pred_result, ref_result)
         elif task == 'all':
             pred, ref = get_all_result(qid, pred_result, ref_result)
+        elif task == 'entity':
+            pred, ref = get_entity_result(qid, pred_result, ref_result)
         else:
             raise ValueError("Illegal task name: {}".format(task))
         if pred and ref:
@@ -228,13 +253,13 @@ def prepare_bleu(pred_result, ref_result, task):
 
     for k, v in pred_dict.items():
         assert len(v) == 1, \
-                "There should be only one predict answer. query_id: {}".format(k)
+            "There should be only one predict answer. query_id: {}".format(k)
     return pred_dict, ref_dict
 
 
-def get_main_result(qid, pred_result, ref_result):
+def get_basic_result(qid, pred_result, ref_result):
     """
-    Prepare answers for task 'main'.
+    Prepare answers for task 'basic'.
 
     Args:
         qid: query_id.
@@ -255,6 +280,26 @@ def get_main_result(qid, pred_result, ref_result):
         pred_ans = [EMPTY]
 
     return [(qid, pred_ans)], [(qid, ref_ans)]
+
+
+def get_entity_result(qid, pred_result, ref_result):
+    """
+    Prepare answers for task 'entity'.
+
+    Args:
+        qid: query_id.
+        pred_result: A dict include all query_id's result information read
+                     from args.pred_file.
+        ref_result: A dict incluce all query_id's result information read
+                    from args.ref_file.
+    Returns:
+        Two lists, the first one contains predict result, the second
+        one contains reference result of the same query_id. Each list has
+        elements of tuple (query_id, answers), 'answers' is a list of strings.
+    """
+    if ref_result[qid]['query_type'] != 'YES_NO':
+        return None, None
+    return get_basic_result(qid, pred_result, ref_result)
 
 
 def get_yesno_result(qid, pred_result, ref_result):
@@ -331,7 +376,7 @@ def get_all_result(qid, pred_result, ref_result):
     """
     if ref_result[qid]['query_type'] == 'YES_NO':
         return get_yesno_result(qid, pred_result, ref_result)
-    return get_main_result(qid, pred_result, ref_result)
+    return get_basic_result(qid, pred_result, ref_result)
 
 
 def format_metrics(metrics, task, err_msg):
@@ -348,7 +393,7 @@ def format_metrics(metrics, task, err_msg):
             >>> {'precision': '0.9', 'recall': '0.9', 'f1-score': '0.9',
             ...  'err': None}
 
-        If the task is one of 'main', 'yesno', or 'all', the result should
+        If the task is one of 'basic', 'yesno', or 'all', the result should
         be like:
             >>> {'bleu_4': '0.25', 'rouge_l': '0.28', 'err': None}
 
@@ -356,21 +401,31 @@ def format_metrics(metrics, task, err_msg):
 
     """
     result = {}
+    sources = ['both', 'search', 'zhidao']
     if err_msg is not None:
-        return {'errorMsg': str(err_msg), 'errorCode': 1, 'data': {}}
-    data = {}
+        return {'errorMsg': str(err_msg), 'errorCode': 1, 'data': []}
+    data = []
     if task == 'entity':
-        data['Precision'] = '{:.2f}'.format(
-                metrics.get('precision', 0) * 100)
-        data['Recall'] = '{:.2f}'.format(
-                metrics.get('recall', 0) * 100)
-        data['F1'] = '{:.2f}'.format(metrics.get('f1', 0) * 100)
+        for src in sources:
+            data.append((src, 'F1', round(metrics[src].get('f1', 0) * 100, 2)))
+            data.append(
+                (src, 'Precision',
+                 round(metrics[src].get('precision', 0) * 100, 2)))
+            data.append(
+                (src, 'Recall', round(metrics[src].get('recall', 0) * 100, 2)))
+            data.append(
+                (src, 'Bleu-4', round(metrics[src].get('bleu_4', 0) * 100, 2)))
+            data.append(
+                (src, 'Rouge-L', round(metrics[src].get('rouge_l', 0) * 100, 2)))
         result['data'] = data
         result['errorCode'] = 0
         result['errorMsg'] = 'success'
     else:
-        data['Bleu-4'] = '{:.2f}'.format(metrics.get('bleu_4', 0) * 100)
-        data['Rouge-L'] = '{:.2f}'.format(metrics.get('rouge_l', 0) * 100)
+        for src in sources:
+            data.append(
+                (src, 'Bleu-4', round(metrics[src].get('bleu_4', 0) * 100, 2)))
+            data.append(
+                (src, 'Rouge-L', round(metrics[src].get('rouge_l', 0) * 100, 2)))
         result['data'] = data
         result['errorCode'] = 0
         result['errorMsg'] = 'success'
@@ -386,12 +441,16 @@ def main(args):
     metrics = {}
     try:
         pred_result = read_file(args.pred_file)
-        ref_result = read_file(args.ref_file)
-        metrics = get_metrics(pred_result, ref_result, args.task)
+        ref_result = read_file(args.ref_file, type='reference')
+        for source in ['both', 'zhidao', 'search']:
+            metrics[source] = get_metrics(
+                    pred_result, ref_result, args.task, source)
     except ValueError as ve:
         err = ve
     except AssertionError as ae:
         err = ae
+    except Exception:
+        raise
 
     print format_metrics(metrics, args.task, err)
 
@@ -400,7 +459,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('pred_file', help='predict file')
     parser.add_argument('ref_file', help='reference file')
-    parser.add_argument('task', help='task name: main|yesno|all|entity')
+    parser.add_argument('task', help='task name: basic|yesno|all|entity')
 
     args = parser.parse_args()
     main(args)
