@@ -154,7 +154,7 @@ class RCModel(object):
             no_dup_query_encodes = tf.reshape(
                 self.sep_q_encodes,
                 [batch_size, -1, tf.shape(self.sep_q_encodes)[1], 2 * self.hidden_size]
-            )[:, 0, :, :]
+            )[0:, 0, 0:, 0:]
         decoder = PointerNetDecoder(self.hidden_size)
         self.start_probs, self.end_probs = decoder.decode(concat_passage_encodes,
                                                           no_dup_query_encodes)

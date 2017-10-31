@@ -63,7 +63,7 @@ def custom_dynamic_rnn(cell, inputs, inputs_len, initial_state=None):
 
         emit_ta = emit_ta.write(t, scores)
         finished = tf.greater_equal(t + 1, inputs_len)
-        return t + 1, cur_state, emit_ta, finished
+        return (t + 1, cur_state, emit_ta, finished)
 
     _, state, emit_ta, _ = tf.while_loop(
         cond=lambda _1, _2, _3, finished: tf.logical_not(tf.reduce_all(finished)),
@@ -163,8 +163,8 @@ class PointerNetDecoder(object):
             with tf.variable_scope('bw'):
                 bw_cell = PointerNetLSTMCell(self.hidden_size, passage_vectors)
                 bw_outputs, _ = custom_dynamic_rnn(bw_cell, fake_inputs, sequence_len, init_state)
-            start_prob = (fw_outputs[:, 0, :] + bw_outputs[:, 1, :]) / 2
-            end_prob = (fw_outputs[:, 1, :] + bw_outputs[:, 0, :]) / 2
+            start_prob = (fw_outputs[0:, 0, 0:] + bw_outputs[0:, 1, 0:]) / 2
+            end_prob = (fw_outputs[0:, 1, 0:] + bw_outputs[0:, 0, 0:]) / 2
             return start_prob, end_prob
 
 
