@@ -63,7 +63,7 @@ def custom_dynamic_rnn(cell, inputs, inputs_len, initial_state=None):
 
         emit_ta = emit_ta.write(t, scores)
         finished = tf.greater_equal(t + 1, inputs_len)
-        return (t + 1, cur_state, emit_ta, finished)
+        return [t + 1, cur_state, emit_ta, finished]
 
     _, state, emit_ta, _ = tf.while_loop(
         cond=lambda _1, _2, _3, finished: tf.logical_not(tf.reduce_all(finished)),
