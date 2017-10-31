@@ -13,6 +13,7 @@ Note that we use Pointer Network for the decoding stage of both models.
 Authors: Yizhong Wang(wangyizhong01@baidu.com)
 Date: 2017/09/20 12:00:00
 """
+
 import os
 import time
 import logging
@@ -20,7 +21,8 @@ import json
 import numpy as np
 import tensorflow as tf
 from layers.basic_rnn import rnn
-from layers.match_layer import RNNMatchLayer, AttentionFlowMatchLayer
+from layers.match_layer import MatchLSTMLayer
+from layers.match_layer import AttentionFlowMatchLayer
 from layers.pointer_net import PointerNetDecoder
 
 
@@ -28,6 +30,7 @@ class RCModel(object):
     """
     Implements the main reading comprehension model.
     """
+
     def __init__(self, args, vocab):
 
         # logging
@@ -96,9 +99,12 @@ class RCModel(object):
         The embedding layer, query and passage share embeddings
         """
         with tf.device('/cpu:0'), tf.variable_scope('word_embedding'):
-            self.word_embeddings = tf.get_variable('word_embeddings', shape=(self.vocab.size(), self.vocab.embed_dim),
-                                                   initializer=tf.constant_initializer(self.vocab.embeddings),
-                                                   trainable=True)
+            self.word_embeddings = tf.get_variable(
+                'word_embeddings',
+                shape=(self.vocab.size(), self.vocab.embed_dim),
+                initializer=tf.constant_initializer(self.vocab.embeddings),
+                trainable=True
+            )
             self.p_emb = tf.nn.embedding_lookup(self.word_embeddings, self.p)
             self.q_emb = tf.nn.embedding_lookup(self.word_embeddings, self.q)
 
@@ -116,7 +122,7 @@ class RCModel(object):
         The core of RC model, get the query-aware passage encoding with either BIDAF or MLSTM
         """
         if self.algo == 'BIDAF':
-            match_layer = RNNMatchLayer(self.hidden_size)
+            match_layer = MatchLSTMLayer(self.hidden_size)
         elif self.algo == 'MLSTM':
             match_layer = AttentionFlowMatchLayer(self.hidden_size)
         else:
@@ -140,14 +146,18 @@ class RCModel(object):
         And since the encodes of queries in the same document is same, we select the first one.
         """
         with tf.variable_scope('same_query_concat'):
-            concat_passage_encodes = tf.reshape(self.fuse_p_encodes,
-                                                [tf.shape(self.start_label)[0], -1, 2 * self.hidden_size])
-            no_dup_query_encodes = tf.reshape(self.sep_q_encodes,
-                                              [tf.shape(self.start_label)[0], -1,
-                                               tf.shape(self.sep_q_encodes)[1],
-                                               2 * self.hidden_size])[:, 0, :, :]
+            batch_size = tf.shape(self.start_label)[0]
+            concat_passage_encodes = tf.reshape(
+                self.fuse_p_encodes,
+                [batch_size, -1, 2 * self.hidden_size]
+            )
+            no_dup_query_encodes = tf.reshape(
+                self.sep_q_encodes,
+                [batch_size, -1, tf.shape(self.sep_q_encodes)[1], 2 * self.hidden_size]
+            )[:, 0, :, :]
         decoder = PointerNetDecoder(self.hidden_size)
-        self.start_probs, self.end_probs = decoder.decode(concat_passage_encodes, no_dup_query_encodes)
+        self.start_probs, self.end_probs = decoder.decode(concat_passage_encodes,
+                                                          no_dup_query_encodes)
 
     def _compute_loss(self):
         """
@@ -274,14 +284,15 @@ class RCModel(object):
             padded_p_len = len(batch['passage_token_ids'][0])
             for sample, start_prob, end_prob in zip(batch['raw_data'], start_probs, end_probs):
 
-                best_answer, _, _, _ = self.find_best_answer(sample, start_prob,
-                                                             end_prob, padded_p_len)
+                best_answer = self.find_best_answer(sample, start_prob, end_prob, padded_p_len)
                 if save_full_info:
                     sample['pred_answers'] = [best_answer]
                     pred_answers.append(sample)
                 else:
-                    pred_answers.append({'query_id': sample['query_id'], 'answers': [best_answer],
-                                         'entities': [], 'yesno_answers': []})
+                    pred_answers.append({'query_id': sample['query_id'],
+                                         'answers': [best_answer],
+                                         'entities': [],
+                                         'yesno_answers': []})
 
         if result_dir is not None and result_prefix is not None:
             with open(os.path.join(result_dir, result_prefix + '.json'), 'w') as fout:
@@ -309,8 +320,9 @@ class RCModel(object):
                 best_score = score
                 best_p_idx = p_idx
                 best_span = answer_span
-        best_answer = ''.join(sample['passages'][best_p_idx]['passage_tokens'][best_span[0]: best_span[1] + 1])
-        return best_answer, best_p_idx, best_span, best_score
+        best_answer = ''.join(
+            sample['passages'][best_p_idx]['passage_tokens'][best_span[0]: best_span[1] + 1])
+        return best_answer
 
     def find_best_answer_for_passage(self, start_probs, end_probs, passage_len=None):
         """
