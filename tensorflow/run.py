@@ -98,7 +98,8 @@ def prepare(args):
 
     unfiltered_vocab_size = vocab.size()
     vocab.filter_tokens_by_cnt(min_cnt=2)
-    logger.info('After filter {} tokens, the final vocab size is {}'.format(unfiltered_vocab_size - vocab.size(),
+    filtered_num = unfiltered_vocab_size - vocab.size()
+    logger.info('After filter {} tokens, the final vocab size is {}'.format(filtered_num,
                                                                             vocab.size()))
 
     logger.info('Assigning embeddings...')
@@ -126,7 +127,8 @@ def train(args):
     rc_model = RCModel(vocab, args)
     logger.info('Training the model...')
     rc_model.train(brc_data, args.epochs, args.batch_size, save_dir=args.model_dir,
-                   save_prefix=args.task + '.' + args.algo, dropout_keep_prob=args.dropout_keep_prob)
+                   save_prefix=args.task + '.' + args.algo,
+                   dropout_keep_prob=args.dropout_keep_prob)
     logger.info('Done with model training!')
 
 
@@ -138,7 +140,8 @@ def predict(args):
     logger.info('Load data_set and vocab...')
     with open(os.path.join(args.vocab_dir, args.task + '.' + 'vocab.data'), 'rb') as fin:
         vocab = pickle.load(fin)
-    brc_data = BRCDataset(args.brc_dir, args.task, args.max_p_num, args.max_p_len, args.max_q_len, False, False)
+    brc_data = BRCDataset(args.brc_dir, args.task,
+                          args.max_p_num, args.max_p_len, args.max_q_len, train=False)
     logger.info('Converting text into ids...')
     brc_data.convert_to_ids(vocab)
     logger.info('Restoring the model...')
@@ -146,10 +149,12 @@ def predict(args):
     rc_model.restore(model_dir=args.model_dir, model_prefix=args.task + '.' + args.algo)
     dev_batches = brc_data.gen_mini_batches('dev', args.batch_size,
                                             pad_id=vocab.get_id(vocab.pad_token), shuffle=False)
-    rc_model.evaluate(dev_batches, result_dir=args.result_dir, result_prefix=args.task + '.dev.predicted')
+    rc_model.evaluate(dev_batches,
+                      result_dir=args.result_dir, result_prefix=args.task + '.dev.predicted')
     test_batches = brc_data.gen_mini_batches('test', args.batch_size,
                                              pad_id=vocab.get_id(vocab.pad_token), shuffle=False)
-    rc_model.evaluate(test_batches, result_dir=args.result_dir, result_prefix=args.task + '.test.predicted')
+    rc_model.evaluate(test_batches,
+                      result_dir=args.result_dir, result_prefix=args.task + '.test.predicted')
 
 
 def run():
