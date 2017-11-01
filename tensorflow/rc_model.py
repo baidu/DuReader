@@ -219,9 +219,9 @@ class RCModel(object):
             total_loss += loss * len(batch['raw_data'])
             total_num += len(batch['raw_data'])
             n_batch_loss += loss
-            if bitx % log_every_n_batch == 0:
+            if log_every_n_batch > 0 and bitx % log_every_n_batch == 0:
                 self.logger.info('Average loss from batch {} to {} is {}'.format(
-                    bitx - log_every_n_batch, bitx, n_batch_loss / log_every_n_batch))
+                    bitx - log_every_n_batch + 1, bitx, n_batch_loss / log_every_n_batch))
         return 1.0 * total_loss / total_num
 
     def train(self, data, epochs, batch_size, save_dir, save_prefix,
@@ -300,9 +300,12 @@ class RCModel(object):
                                          'yesno_answers': []})
 
         if result_dir is not None and result_prefix is not None:
-            with open(os.path.join(result_dir, result_prefix + '.json'), 'w') as fout:
+            result_file = os.path.join(result_dir, result_prefix + '.json')
+            with open(result_file, 'w') as fout:
                 for pred_answer in pred_answers:
                     fout.write(json.dumps(pred_answer, encoding='utf8', ensure_ascii=False) + '\n')
+
+            self.logger.log('Saving results with prefix to {}'.format(result_prefix, result_file))
 
         # this average loss is invalid when testing, since we don't use fake start_id and end_id
         return 1.0 * total_loss / total_num
