@@ -73,8 +73,9 @@ class BRCDataset(object):
                         para_infos = []
                         for para_tokens in doc['segmented_paragraphs']:
                             query_tokens = sample['segmented_query']
-                            common_with_query = sum(Counter(para_tokens) & Counter(query_tokens))
-                            recall_wrt_query = float(common_with_query) / len(query_tokens)
+                            common_tokens_with_query = Counter(para_tokens) & Counter(query_tokens)
+                            correct_preds = sum(common_tokens_with_query.values())
+                            recall_wrt_query = float(correct_preds) / len(query_tokens)
                             para_infos.append((para_tokens, recall_wrt_query, len(para_tokens)))
                         para_infos.sort(key=lambda x: (-x[1], x[2]))
                         fake_passage_tokens = []

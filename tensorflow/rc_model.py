@@ -31,7 +31,7 @@ class RCModel(object):
     Implements the main reading comprehension model.
     """
 
-    def __init__(self, args, vocab):
+    def __init__(self, vocab, args):
 
         # logging
         self.logger = logging.getLogger("brc")
@@ -78,7 +78,7 @@ class RCModel(object):
         self._decode()
         self._compute_loss()
         self._create_train_op()
-        self.logger.info('Time to build graph: {}'.format(time.time() - start_t))
+        self.logger.info('Time to build graph: {} s'.format(time.time() - start_t))
         param_num = sum([np.prod(self.sess.run(tf.shape(v))) for v in self.all_params])
         self.logger.info('There are {} parameters in the model'.format(param_num))
 
@@ -205,8 +205,9 @@ class RCModel(object):
             train_batches: iterable batch data for training
             dropout_keep_prob: float value indicating dropout keep probability
         """
-        total_loss, total_num = 0, 0
-        for bitx, batch in enumerate(train_batches):
+        total_num, total_loss = 0, 0
+        log_every_n_batch, n_batch_loss = 100, 0
+        for bitx, batch in enumerate(train_batches, 1):
             feed_dict = {self.p: batch['passage_token_ids'],
                          self.q: batch['query_token_ids'],
                          self.p_length: batch['passage_length'],
@@ -217,6 +218,10 @@ class RCModel(object):
             _, loss = self.sess.run([self.train_op, self.loss], feed_dict)
             total_loss += loss * len(batch['raw_data'])
             total_num += len(batch['raw_data'])
+            n_batch_loss += loss
+            if bitx % log_every_n_batch == 0:
+                self.logger.info('Average loss from batch {} to {} is {}'.format(
+                    bitx - log_every_n_batch, bitx, n_batch_loss / log_every_n_batch))
         return 1.0 * total_loss / total_num
 
     def train(self, data, epochs, batch_size, save_dir, save_prefix,
