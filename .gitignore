@@ -1,3 +1,8 @@
 models/
 preprocessed/
 raw/
+*.pyc
+vocab.search
+local
+bleu_metric
+rouge_metric

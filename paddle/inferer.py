@@ -72,8 +72,8 @@ class Inferer(object):
 
     def get_infer_file(self):
         """
-        Decides the infer file name. A infer file is a file storing the parsed
-        inferring result for later use.
+        Decides the infer file name. An infer file is a file storing the parsed
+        inferring result for later analysis.
 
         Returns:
             is_exist: True if the file is already exists, otherwise False.

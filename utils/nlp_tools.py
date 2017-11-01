@@ -17,6 +17,11 @@ import sys
 import json
 import ssl
 
+__all__ = [
+    'get_emb',
+    'get_wordseg',
+    ]
+
 lexer = "https://aip.baidubce.com/rpc/2.0/nlp/v1/lexer"
 ember = "https://aip.baidubce.com/rpc/2.0/nlp/v2/word_emb_vec"
 access_token = "24.a456bde3693f4b2c6743011dec33ec29.2592000.1508494458.282335-10163834"

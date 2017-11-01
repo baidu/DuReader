@@ -94,6 +94,43 @@ def metric_max_over_ground_truths(metric_fn, prediction, ground_truths):
     return max(scores_for_ground_truths)
 
 
+def find_best_query_match(doc, query, with_score=False):
+    """
+    For each docment, find the paragraph that matches best to the query.
+    Args:
+        doc: The document object.
+        query: The query tokens.
+        with_score: If True then the match score will be returned,
+            otherwise False.
+    Returns:
+        The index of the best match paragraph, if with_score=False,
+        otherwise returns a tuple of the index of the best match paragraph
+        and the match score of that paragraph.
+    """
+    most_related_para = -1
+    max_related_score = 0
+    most_related_para_len = 0
+    for p_idx, para_tokens in enumerate(doc['segmented_paragraphs']):
+        if len(query) > 0:
+            related_score = metric_max_over_ground_truths(recall,
+                    para_tokens,
+                    query)
+        else:
+            related_score = 0
+
+        if related_score > max_related_score \
+                or (related_score == max_related_score \
+                and len(para_tokens) < most_related_para_len):
+            most_related_para = p_idx
+            max_related_score = related_score
+            most_related_para_len = len(para_tokens)
+    if most_related_para == -1:
+        most_related_para = 0
+    if with_score:
+        return most_related_para, max_related_score
+    return most_related_para
+
+
 def find_fake_answer(sample):
     """
     For each document, finds the most related paragraph based on recall,
@@ -148,8 +185,6 @@ def find_fake_answer(sample):
             for end_tidx in range(len(most_related_para_tokens) - 1, start_tidx - 1, -1):
                 span_tokens = most_related_para_tokens[start_tidx: end_tidx + 1]
                 if len(sample['segmented_answers']) > 0:
-                    # match_score = Rouge().calc_score([' '.join(span_tokens)],
-                    # [' '.join(tokens) for tokens in sample['segmented_answers']])
                     match_score = metric_max_over_ground_truths(f1_score, span_tokens,
                                                                 sample['segmented_answers'])
                 else:
@@ -168,7 +203,8 @@ def find_fake_answer(sample):
         sample['match_scores'].append(best_match_score)
 
 
-for line in sys.stdin:
-    sample = json.loads(line)
-    find_fake_answer(sample)
-    print(json.dumps(sample, encoding='utf8', ensure_ascii=False))
+if __name__ == '__main__':
+    for line in sys.stdin:
+        sample = json.loads(line)
+        find_fake_answer(sample)
+        print(json.dumps(sample, encoding='utf8', ensure_ascii=False))

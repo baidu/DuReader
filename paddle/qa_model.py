@@ -11,6 +11,8 @@ networks.
 Authors: liuyuan(liuyuan04@baidu.com)
 Data: 2017/09/20 12:00:00
 """
+import copy
+import math
 import json
 import logging
 import paddle.v2.layer as layer
@@ -18,8 +20,8 @@ import paddle.v2.attr as Attr
 import paddle.v2.activation as Act
 import paddle.v2.data_type as data_type
 import paddle.v2 as paddle
-import squad_eval
-from brc_eval import compute_metrics_from_list
+
+from utils import compute_bleu_rouge
 
 logger = logging.getLogger("paddle")
 logger.setLevel(logging.INFO)
@@ -36,7 +38,6 @@ class QAModel(object):
         self.is_infer = kwargs['is_infer']
         self.doc_num = kwargs['doc_num']
         self.static_emb = kwargs['static_emb']
-        self.metric = kwargs['metric']
 
     def check_and_create_data(self):
         """
@@ -93,7 +94,8 @@ class QAModel(object):
         """
         # embedding parameter, shared by question and paragraph.
         self.emb_param = Attr.Param(name=self.name + '.embs',
-                                    is_static=self.static_emb)
+                                    is_static=self.static_emb,
+                                    initial_std=math.sqrt(1. / self.emb_dim))
 
     def get_embs(self, input):
         """
@@ -191,8 +193,20 @@ class QAModel(object):
                 act=Act.SequenceSoftmax())
         return probs
 
+    def __search_boundry(self, start_probs, end_probs):
+        max_answer_len = 200
+        assert len(start_probs) == len(end_probs)
+        boundries = []
+        for start_idx, start_prob in enumerate(start_probs):
+            max_idx = min(start_idx + max_answer_len + 1, len(end_probs))
+            for end_idx in range(start_idx, max_idx):
+                end_prob = end_probs[end_idx]
+                boundries.append(
+                    ((start_idx, end_idx), start_prob * end_prob))
+        max_boundry = sorted(boundries, key=lambda x: x[1], reverse=True)[0][0]
+        return max_boundry
+
     def __parse_infer_ret(self, infer_ret):
-        doc_num = 5 if self.metric == 'marco' else 1
         pred_list = []
         ref_list = []
         objs = []
@@ -206,32 +220,22 @@ class QAModel(object):
 
             for ins in batch_input:
                 ins = ins[-1]
-                len_slice = lens[idx_len:idx_len + doc_num]
+                len_slice = lens[idx_len:idx_len + self.doc_num]
                 prob_len = int(sum(len_slice))
                 start_prob_slice = probs[idx_prob:idx_prob + prob_len]
                 end_prob_slice = probs[idx_prob + prob_len:idx_prob + 2 * prob_len]
-                start_idx = start_prob_slice.argmax(axis=0)
-                if start_idx < prob_len - 1:
-                    rest_slice = end_prob_slice[start_idx:]
-                    end_idx = start_idx + rest_slice.argmax(axis=0)
-                else:
-                    end_idx = start_idx
+                start_idx, end_idx = self.__search_boundry(start_prob_slice,
+                        end_prob_slice)
                 pred_tokens = [] if start_idx > end_idx \
                         else ins['tokens'][start_idx:end_idx + 1]
                 pred = ' '.join(pred_tokens)
-                ref = ins['answer']
-                idx_len += doc_num
+                ref = ins['answers']
+                idx_len += self.doc_num
                 idx_prob += prob_len * 2
-                pred_obj = {'answer': [pred],
-                        'query': ins_cnt,
-                        'question': ins['question']}
-                ref_obj = {'answer': ref,
-                        'query': ins_cnt,
-                        'question': ins['question']}
-                stored_obj = {'question': ins['question'],
-                        'query': ins_cnt,
-                        'answer_ref': ref,
-                        'answer_pred': [pred]}
+                pred_obj = {ins['query_id']: [pred]}
+                ref_obj = {ins['query_id']: ref}
+                stored_obj = copy.deepcopy(ins)
+                stored_obj['answers_pred'] = [pred]
                 objs.append(stored_obj)
                 pred_list.append(pred_obj)
                 ref_list.append(ref_obj)
@@ -244,11 +248,29 @@ class QAModel(object):
         with open(infer_file, 'r') as inf:
             for line in inf:
                 obj = json.loads(line.strip())
-                ref_obj = {'query': obj['query'], 'answer': obj['answer_ref']}
-                pred_obj = {'query': obj['query'], 'answer': obj['answer_pred']}
+                ref_obj = {obj['query_id']: obj['answers']}
+                pred_obj = {obj['query_id']: obj['answers_pred']}
                 ref_list.append(ref_obj)
                 pred_list.append(pred_obj)
         return ref_list, pred_list
+
+    def drop_out(self, input, drop_rate=0.5):
+        """
+        Implements drop out.
+
+        Args:
+            input: the LayerOutput needs to apply drop out.
+            drop_rate: drop out rate.
+
+        Returns:
+            The layer output after applying drop out.
+        """
+        with layer.mixed(
+                layer_attr=Attr.ExtraLayerAttribute(
+                    drop_rate=drop_rate),
+                bias_attr=False) as dropped:
+            dropped += layer.identity_projection(input)
+        return dropped
 
     def evaluate(self,
             infer_file,
@@ -268,6 +290,12 @@ class QAModel(object):
                        the ret as input for evaluation.
 
         """
+        def __merge_dict(obj_list):
+            ret = {}
+            for obj in obj_list:
+                ret.update(obj)
+            return ret
+
         pred_list = []
         ref_list = []
         objs = []
@@ -279,12 +307,8 @@ class QAModel(object):
             with open(infer_file, 'w') as of:
                 for o in objs:
                     print >> of, json.dumps(o, ensure_ascii=False).encode('utf8')
-        if self.metric == 'marco':
-            metrics = compute_metrics_from_list(pred_list, ref_list, 1)
-        elif self.metric == 'squad':
-            metrics = squad_eval.eval_lists(pred_list, ref_list)
-        else:
-            raise ValueError("Unknown metrics '{}'".format(self.metric))
+        metrics = compute_bleu_rouge(__merge_dict(pred_list),
+                __merge_dict(ref_list))
         res_str = '{} {}'.format(infer_file,
                 ' '.join('{}={}'.format(k, v) for k, v in metrics.items()))
         logger.info(res_str)

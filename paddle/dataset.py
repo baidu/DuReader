@@ -20,7 +20,8 @@ import random
 import sys
 from collections import OrderedDict
 import paddle.v2 as paddle
-from find_answer import find_best_query_match
+
+from utils import find_best_query_match
 
 logger = logging.getLogger("paddle")
 logger.setLevel(logging.INFO)
@@ -188,7 +189,6 @@ class DuReaderQA(Dataset):
     """
     def __init__(self, *args, **kwargs):
         super(DuReaderQA, self).__init__(*args, **kwargs)
-
         doc_names = ['doc' + str(i) for i in range(self.doc_num)]
         start_label_names = ['start_pos' + str(i) for i in range(self.doc_num)]
         end_label_names = ['end_pos' + str(i) for i in range(self.doc_num)]
@@ -211,7 +211,7 @@ class DuReaderQA(Dataset):
         para_tokens = []
         for i, doc in enumerate(docs):
             if not self.is_infer:
-                para_idx = doc['most_related_paragraph']
+                para_idx = doc['most_related_para']
             else:
                 para_idx = find_best_query_match(doc, query_tokens)
             para = doc['segmented_paragraphs'][para_idx]
@@ -253,14 +253,18 @@ class DuReaderQA(Dataset):
             start_labels.append(start_label)
             end_labels.append(end_label)
             para_lens.append([[len(para_ids)]])
-        sample = [query_ids] + paras + start_labels + end_labels + para_lens
+        sample = [query_ids] + paras + para_lens + start_labels + end_labels
         return sample
 
     def __get_infer_info(self, obj, paras):
         info = {}
         info['tokens'] = list(itertools.chain(*paras))
-        info['answer'] = obj['answers']
-        info['question'] = obj['query']
+        info['answers'] = obj.get('answers', [])
+        info['query'] = obj['query']
+        info['query_id'] = obj['query_id']
+        info['query_type'] = obj['query_type']
+        info['yesno_answers'] = obj.get('yesno_answers', [])
+        info['entities'] = obj.get('entity_answers', [[]])
         return info
 
     def parse(self, line):
@@ -292,7 +296,7 @@ class DuReaderQA(Dataset):
         if not selected_paras:
             return ret
         sample = self.__make_sample(q_ids, selected_paras)
-        assert len(sample) == len(self.schema)
+        #assert len(sample) == len(self.schema)
         if self.is_infer:
             sample.append(self.__get_infer_info(obj, para_tokens))
         ret.append(sample)

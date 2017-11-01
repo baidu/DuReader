@@ -17,7 +17,6 @@ import os
 import sys
 import json
 import dataset
-import squad_eval
 
 from bidaf import BiDAF
 from match_lstm import MatchLstm
@@ -26,7 +25,6 @@ from yesno import TypeCls
 
 from trainer import Trainer
 from inferer import Inferer
-from brc_eval import compute_metrics_from_list
 
 logger = logging.getLogger("paddle")
 logger.setLevel(logging.INFO)
@@ -64,7 +62,6 @@ class Env(object):
                          vocab_size=self.args.vocab_size,
                          doc_num=self.datasets[1].doc_num,
                          static_emb=(self.args.pre_emb.strip() != ''),
-                         metric=self.args.metric,
                          emb_dim=self.args.emb_dim)
         elif self.args.algo == Algos.MLSTM:
             self.__create_qa_data()
@@ -75,14 +72,13 @@ class Env(object):
                          vocab_size=self.args.vocab_size,
                          doc_num=self.datasets[1].doc_num,
                          static_emb=(self.args.pre_emb.strip() != ''),
-                         metric=self.args.metric,
                          emb_dim=self.args.emb_dim)
         elif self.args.algo == Algos.RANK:
             self.__create_ranking_data()
             self.model = DSSM(
                          Algos.RANK,
                          train_reader.schema,
-                         is_infer=args.is_infer,
+                         is_infer=self.args.is_infer,
                          vocab_size=self.args.vocab_size,
                          emb_dim=self.args.emb_dim)
         elif self.args.algo == Algos.YESNO:
@@ -99,15 +95,17 @@ class Env(object):
             raise ValueError('Illegal algo: {}'.format(self.args.algo))
 
     def __create_qa_data(self):
-        train_reader = dataset.BaiduNlpDataV2(
-                       file_name=self.args.trainset,
-                       vocab_file=self.args.vocab_file,
-                       vocab_size=self.args.vocab_size,
-                       max_p_len=self.args.max_p_len,
-                       keep_raw=False,
-                       shuffle=(not self.args.is_infer),
-                       preload=(not self.args.is_infer))
-        test_reader = dataset.BaiduNlpDataV2(
+        if self.args.is_infer:
+            train_reader = None
+        else:
+            train_reader = dataset.DuReaderQA(
+                           file_name=self.args.trainset,
+                           vocab_file=self.args.vocab_file,
+                           vocab_size=self.args.vocab_size,
+                           max_p_len=self.args.max_p_len,
+                           shuffle=(not self.args.is_infer),
+                           preload=(not self.args.is_infer))
+        test_reader = dataset.DuReaderQA(
                       file_name=self.args.testset,
                       vocab_file=self.args.vocab_file,
                       vocab_size=self.args.vocab_size,
@@ -118,12 +116,15 @@ class Env(object):
         self.datasets = [train_reader, test_reader]
 
     def __create_ranking_data(self):
-        train_reader = dataset.BaiduNlpRanking(
-                       file_name=self.args.trainset,
-                       vocab_file=self.args.vocab_file,
-                       vocab_size=self.args.vocab_size,
-                       keep_raw=False,
-                       preload=False)
+        if self.args.is_infer:
+            train_reader = None
+        else:
+            train_reader = dataset.BaiduNlpRanking(
+                           file_name=self.args.trainset,
+                           vocab_file=self.args.vocab_file,
+                           vocab_size=self.args.vocab_size,
+                           keep_raw=False,
+                           preload=False)
         test_reader = dataset.BaiduNlpRanking(
                       file_name=self.args.testset,
                       vocab_file=self.args.vocab_file,
@@ -133,13 +134,16 @@ class Env(object):
         self.datasets = [train_reader, test_reader]
 
     def __create_yesno_data(self):
-        train_reader = dataset.BaiduYesNo(
-                       file_name=self.args.trainset,
-                       vocab_file=self.args.vocab_file,
-                       vocab_size=self.args.vocab_size,
-                       keep_raw=False,
-                       preload=True,
-                       shuffle=True)
+        if self.args.is_infer:
+            train_reader = None
+        else:
+            train_reader = dataset.BaiduYesNo(
+                           file_name=self.args.trainset,
+                           vocab_file=self.args.vocab_file,
+                           vocab_size=self.args.vocab_size,
+                           keep_raw=False,
+                           preload=True,
+                           shuffle=True)
         test_reader = dataset.BaiduYesNo(
                       file_name=self.args.testset,
                       vocab_file=self.args.vocab_file,
@@ -182,7 +186,6 @@ def parse_args():
     parser.add_argument('--model_file', default='')
     parser.add_argument('--init_from', default='')
     parser.add_argument('--max_p_len', type=int, default=300)
-    parser.add_argument('--metric', default='marco')
 
     args = parser.parse_args()
     return args

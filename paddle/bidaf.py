@@ -9,7 +9,7 @@ This module implements the BiDAF algorithm described in
 https://arxiv.org/abs/1611.01603
 
 Authors: liuyuan(liuyuan04@baidu.com)
-Data: 2017/09/20 12:00:00
+Date: 2017/09/20 12:00:00
 """
 import paddle.v2.layer as layer
 import paddle.v2.attr as Attr
@@ -29,13 +29,16 @@ class BiDAF(QAModel):
               input=embs,
               size=self.emb_dim,
               fwd_mat_param_attr=Attr.Param(self.name + '_f_enc_mat.w' + type),
-              fwd_bias_param_attr=Attr.Param(self.name + '_f_enc.bias' + type),
+              fwd_bias_param_attr=Attr.Param(self.name + '_f_enc.bias' + type,
+                  initial_std=0.),
               fwd_inner_param_attr=Attr.Param(self.name + '_f_enc_inn.w' + type),
               bwd_mat_param_attr=Attr.Param(self.name + '_b_enc_mat.w' + type),
-              bwd_bias_param_attr=Attr.Param(self.name + '_b_enc.bias' + type),
+              bwd_bias_param_attr=Attr.Param(self.name + '_b_enc.bias' + type,
+                  initial_std=0.),
               bwd_inner_param_attr=Attr.Param(self.name + '_b_enc_inn.w' + type),
               return_seq=True)
-        return enc
+        enc_dropped = self.drop_out(enc, drop_rate=0.25)
+        return enc_dropped
 
     def __step_basic(self, h_cur, u):
         expanded_h = layer.expand(input=h_cur, expand_as=u)
@@ -137,27 +140,33 @@ class BiDAF(QAModel):
             g = self.__attention_flow(h, u)
             m1 = networks.bidirectional_lstm(
                  fwd_mat_param_attr=Attr.Param('_f_m1_mat.w'),
-                 fwd_bias_param_attr=Attr.Param('_f_m1.bias'),
+                 fwd_bias_param_attr=Attr.Param('_f_m1.bias',
+                     initial_std=0.),
                  fwd_inner_param_attr=Attr.Param('_f_m1_inn.w'),
                  bwd_mat_param_attr=Attr.Param('_b_m1_mat.w'),
-                 bwd_bias_param_attr=Attr.Param('_b_m1.bias'),
+                 bwd_bias_param_attr=Attr.Param('_b_m1.bias',
+                     initial_std=0.),
                  bwd_inner_param_attr=Attr.Param('_b_m1_inn.w'),
                  input=g,
                  size=self.emb_dim,
                  return_seq=True)
-            cat_g_m1 = layer.concat(input=[g, m1])
+            m1_dropped = self.drop_out(m1, drop_rate=0.)
+            cat_g_m1 = layer.concat(input=[g, m1_dropped])
 
             m2 = networks.bidirectional_lstm(
                  fwd_mat_param_attr=Attr.Param('_f_m2_mat.w'),
-                 fwd_bias_param_attr=Attr.Param('_f_m2.bias'),
+                 fwd_bias_param_attr=Attr.Param('_f_m2.bias',
+                     initial_std=0.),
                  fwd_inner_param_attr=Attr.Param('_f_m2_inn.w'),
                  bwd_mat_param_attr=Attr.Param('_b_m2_mat.w'),
-                 bwd_bias_param_attr=Attr.Param('_b_m2.bias'),
+                 bwd_bias_param_attr=Attr.Param('_b_m2.bias',
+                     initial_std=0.),
                  bwd_inner_param_attr=Attr.Param('_b_m2_inn.w'),
                  input=m1,
                  size=self.emb_dim,
                  return_seq=True)
-            cat_g_m2 = layer.concat(input=[g, m2])
+            m2_dropped = self.drop_out(m2, drop_rate=0.)
+            cat_g_m2 = layer.concat(input=[g, m2_dropped])
             m1s.append(cat_g_m1)
             m2s.append(cat_g_m2)
 
@@ -167,3 +176,17 @@ class BiDAF(QAModel):
         start = self.decode('start', all_m1)
         end = self.decode('end', all_m2)
         return start, end
+
+    def __fusion_layer(self, input1, input2):
+        # fusion layer
+        neg_input2 = layer.slope_intercept(input=input2,
+                slope=-1.0,
+                intercept=0.0)
+        diff1 = layer.addto(input=[input1, neg_input2],
+                act=Act.Identity(),
+                bias_attr=False)
+        diff2 = layer.mixed(bias_attr=False,
+                input=layer.dotmul_operator(a=input1, b=input2))
+
+        fused = layer.concat(input=[input1, input2, diff1, diff2])
+        return fused

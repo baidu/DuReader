@@ -21,6 +21,7 @@ import paddle.v2 as paddle
 import paddle.v2.evaluator as evaluator
 import paddle.v2.optimizer as opt
 
+
 import os
 
 class Trainer(object):
@@ -96,12 +97,14 @@ class Trainer(object):
         Collects and logs parameter statisitics.
         """
         param_names = self.parameters.keys()
-        param_info = "name={} shape={} val_mean={:.5f} val_max={:.5f}"
+        param_info = "name={} shape={} val_mean={:.5f} val_max={:.5f} val_std={:.5f}"
         for p in param_names:
             self.logger.info(param_info.format(p,
                 self.parameters.get_shape(p),
                 np.absolute(self.parameters.get(p)).mean(),
-                self.parameters.get(p).max()))
+                self.parameters.get(p).max(),
+                self.parameters.get(p).std(),
+                ))
 
     def __event_handler(self, event):
         if isinstance(event, paddle.event.EndIteration):
@@ -152,7 +155,6 @@ class Trainer(object):
         # init paddle
         paddle.init(use_gpu=self.args.use_gpu,
                     trainer_count=self.args.trainer_count)
-
 
         l2_rate = self.args.l2 * self.args.batch_size
         # create optimizer
