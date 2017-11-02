@@ -150,13 +150,51 @@ class DuReaderYesNo(Dataset):
     Implements parser for yesno task.
     """
     def __init__(self, *args, **kwargs):
+        self.labels = {'None': 0, 'Yes': 1, 'No': 2, 'Depends': 3}
         super(DuReaderYesNo, self).__init__(*args, **kwargs)
         self.schema = ['q_ids', 'a_ids', 'label']
         self.feeding = {name: i for i, name in enumerate(self.schema)}
+        if self.is_infer:
+            assert self.shuffle == False, 'Shuffling is forbidden for inference'
 
-    def parse(self, line):
+    def __get_id(self, s):
+        s_ids = []
+        if not isinstance(s, list):
+            s = s.split(' ')
+        for t in s:
+            s_ids.append(self.vocab.get(t, self.unk_id))
+        return s_ids
+
+    def parse_train(self, line):
         """
-        Parses one line.
+        Parses one line for training.
+
+        Args:
+            line: A legal json string.
+
+        Returns:
+            A record as self.schema describes.
+        """
+
+        obj = json.loads(line.strip())
+        ret = []
+        if obj['query_type'] != 'YES_NO':
+            return ret
+        label_ids = [self.labels[l] for l in obj['yesno_answers']]
+        query = [
+                self.vocab.get(x, self.unk_id)
+                for x in obj['segmented_query']]
+        paras = map(self.__get_id, obj['segmented_answers'])
+
+        if not query or not paras:
+            return ret
+        for para, lbl in zip(paras, label_ids):
+            ret.append((query, para, lbl))
+        return ret
+
+    def parse_infer(self, line):
+        """
+        Parses one line for inferring.
 
         Args:
             line: A legal json string.
@@ -165,22 +203,31 @@ class DuReaderYesNo(Dataset):
             A record as self.schema describes.
         """
         obj = json.loads(line.strip())
-        label = obj['label']
-        query = [
-                self.vocab.get(x, self.unk_id)
-                for x in obj['segmented_query']]
-        para = [
-                self.vocab.get(x, self.unk_id)
-                for x in obj['segmented_answer']]
-
         ret = []
-        if not query or not para or label not in set(range(4)):
-            return ret
-        record = [query, para, label]
-        if self.is_infer:
-            record.append(obj)
-        ret.append(record)
+        paras = map(self.__get_id, obj['answers'])
+        query = [self.vocab.get(x, self.unk_id) for x in obj['query']]
+        fake_label = 0
+        for idx, para in enumerate(paras):
+            info = copy.deepcopy(obj)
+            info['answer_idx'] = idx
+            info['yesno_answers_ref'] = info['yesno_answers_ref']
+            info['yesno_answers'] = []
+            ret.append((query, para, fake_label, info))
         return ret
+
+    def parse(self, line):
+        """
+        Parses one line for inferring.
+
+        Args:
+            line: A legal json string.
+
+        Returns:
+            A record as self.schema describes.
+        """
+        if self.is_infer:
+            return self.parse_infer(line)
+        return self.parse_train(line)
 
 
 class DuReaderQA(Dataset):
@@ -259,11 +306,13 @@ class DuReaderQA(Dataset):
     def __get_infer_info(self, obj, paras):
         info = {}
         info['tokens'] = list(itertools.chain(*paras))
-        info['answers'] = obj.get('answers', [])
-        info['query'] = obj['query']
+        info['answers'] = []
+        info['answers_ref'] = obj.get('segmented_answers', [])
+        info['query'] = obj['segmented_query']
         info['query_id'] = obj['query_id']
         info['query_type'] = obj['query_type']
-        info['yesno_answers'] = obj.get('yesno_answers', [])
+        info['yesno_answers_ref'] = obj.get('yesno_answers', [])
+        info['yesno_answers'] = []
         info['entities'] = obj.get('entity_answers', [[]])
         return info
 
@@ -306,7 +355,7 @@ class DuReaderQA(Dataset):
 if __name__ == '__main__':
     data = sys.argv[1]
     vocab = sys.argv[2]
-    baidu = DuReaderQA(file_name=data,
+    dataset = DuReaderYesNo(file_name=data,
             vocab_file=vocab,
             preload=False,
             max_p_len=300,
@@ -315,7 +364,7 @@ if __name__ == '__main__':
             vocab_size=218967)
 
     # test reader
-    reader = baidu.create_reader()
+    reader = dataset.create_reader()
     for r in reader():
         print r
 

@@ -20,7 +20,7 @@ import dataset
 
 from bidaf import BiDAF
 from match_lstm import MatchLstm
-from yesno import TypeCls
+from yesno import OpinionClassifier
 
 from trainer import Trainer
 from inferer import Inferer
@@ -73,9 +73,9 @@ class Env(object):
                          emb_dim=self.args.emb_dim)
         elif self.args.algo == Algos.YESNO:
             self.__create_yesno_data()
-            self.model = TypeCls(
+            self.model = OpinionClassifier(
                          Algos.YESNO,
-                         train_reader.schema,
+                         self.datasets[1].schema,
                          is_infer=self.args.is_infer,
                          vocab_size=self.args.vocab_size,
                          static_emb=(self.args.pre_emb.strip() != ''),
@@ -109,18 +109,16 @@ class Env(object):
         if self.args.is_infer:
             train_reader = None
         else:
-            train_reader = dataset.BaiduYesNo(
+            train_reader = dataset.DuReaderYesNo(
                            file_name=self.args.trainset,
                            vocab_file=self.args.vocab_file,
                            vocab_size=self.args.vocab_size,
-                           keep_raw=False,
                            preload=True,
                            shuffle=True)
-        test_reader = dataset.BaiduYesNo(
+        test_reader = dataset.DuReaderYesNo(
                       file_name=self.args.testset,
                       vocab_file=self.args.vocab_file,
                       vocab_size=self.args.vocab_size,
-                      keep_raw=False,
                       is_infer=self.args.is_infer,
                       preload=(not self.args.is_infer),
                       shuffle=False)

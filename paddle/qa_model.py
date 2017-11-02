@@ -229,14 +229,16 @@ class QAModel(object):
                         end_prob_slice)
                 pred_tokens = [] if start_idx > end_idx \
                         else ins['tokens'][start_idx:end_idx + 1]
-                pred = normalize([' '.join(pred_tokens)])
-                ref = normalize(ins['answers'])
+
+                pred = [' '.join(pred_tokens)]
+                ref = ins['answers_ref']
+
                 idx_len += self.doc_num
                 idx_prob += prob_len * 2
                 pred_obj = {ins['query_id']: pred}
                 ref_obj = {ins['query_id']: ref}
                 stored_obj = copy.deepcopy(ins)
-                stored_obj['answers_pred'] = pred
+                stored_obj['answers'] = pred
                 objs.append(stored_obj)
                 pred_list.append(pred_obj)
                 ref_list.append(ref_obj)
@@ -249,8 +251,8 @@ class QAModel(object):
         with open(infer_file, 'r') as inf:
             for line in inf:
                 obj = json.loads(line.strip())
-                ref_obj = {obj['query_id']: obj['answers']}
-                pred_obj = {obj['query_id']: obj['answers_pred']}
+                ref_obj = {obj['query_id']: obj['answers_ref']}
+                pred_obj = {obj['query_id']: obj['answers']}
                 ref_list.append(ref_obj)
                 pred_list.append(pred_obj)
         return ref_list, pred_list
@@ -291,10 +293,11 @@ class QAModel(object):
                        the ret as input for evaluation.
 
         """
-        def __merge_dict(obj_list):
+        def __merge_and_normalize(obj_list):
             ret = {}
             for obj in obj_list:
-                ret.update(obj)
+                normalized = {k: normalize(v) for k, v in obj.items()}
+                ret.update(normalized)
             return ret
 
         pred_list = []
@@ -308,8 +311,9 @@ class QAModel(object):
             with open(infer_file, 'w') as of:
                 for o in objs:
                     print >> of, json.dumps(o, ensure_ascii=False).encode('utf8')
-        metrics = compute_bleu_rouge(__merge_dict(pred_list),
-                __merge_dict(ref_list))
+        metrics = compute_bleu_rouge(
+                __merge_and_normalize(pred_list),
+                __merge_and_normalize(ref_list))
         res_str = '{} {}'.format(infer_file,
                 ' '.join('{}={}'.format(k, v) for k, v in metrics.items()))
         logger.info(res_str)

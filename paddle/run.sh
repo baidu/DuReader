@@ -56,8 +56,6 @@ train() {
 infer() {
     model_name=`basename $2`
     PYTHONPATH=$PWD:$ROOT CUDA_VISIBLE_DEVICES=3 python $env_dir/run.py \
-        --trainset ../data/preprocessed/search.train.json \
-        --testset ../data/preprocessed/search.dev.json \
         --vocab_file ../data/vocab.search \
         --emb_dim $emb_dim \
         --batch_size 32 \
@@ -74,7 +72,7 @@ dir_infer() {
     for f in $( ls -t $dir );
     do
         model_file=$dir/$f
-        infer --model_file $model_file
+        infer --model_file $model_file $@
     done
 }
 
@@ -83,5 +81,5 @@ echo "rest args: $@"
 if [ $job == "train" ]; then
     train $@
 else
-    dir_infer $model_dir
+    dir_infer $model_dir $@
 fi
