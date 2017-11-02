@@ -20,7 +20,6 @@ import dataset
 
 from bidaf import BiDAF
 from match_lstm import MatchLstm
-from dssm import DSSM
 from yesno import TypeCls
 
 from trainer import Trainer
@@ -36,7 +35,6 @@ class Algos(object):
     """
     BIDAF = 'bidaf'
     MLSTM = 'mlstm'
-    RANK = 'rank'
     YESNO = 'yesno'
 
 
@@ -73,14 +71,6 @@ class Env(object):
                          doc_num=self.datasets[1].doc_num,
                          static_emb=(self.args.pre_emb.strip() != ''),
                          emb_dim=self.args.emb_dim)
-        elif self.args.algo == Algos.RANK:
-            self.__create_ranking_data()
-            self.model = DSSM(
-                         Algos.RANK,
-                         train_reader.schema,
-                         is_infer=self.args.is_infer,
-                         vocab_size=self.args.vocab_size,
-                         emb_dim=self.args.emb_dim)
         elif self.args.algo == Algos.YESNO:
             self.__create_yesno_data()
             self.model = TypeCls(
@@ -111,24 +101,6 @@ class Env(object):
                       vocab_size=self.args.vocab_size,
                       max_p_len=self.args.max_p_len,
                       shuffle=False,
-                      is_infer=self.args.is_infer,
-                      preload=(not self.args.is_infer))
-        self.datasets = [train_reader, test_reader]
-
-    def __create_ranking_data(self):
-        if self.args.is_infer:
-            train_reader = None
-        else:
-            train_reader = dataset.BaiduNlpRanking(
-                           file_name=self.args.trainset,
-                           vocab_file=self.args.vocab_file,
-                           vocab_size=self.args.vocab_size,
-                           keep_raw=False,
-                           preload=False)
-        test_reader = dataset.BaiduNlpRanking(
-                      file_name=self.args.testset,
-                      vocab_file=self.args.vocab_file,
-                      vocab_size=self.args.vocab_size,
                       is_infer=self.args.is_infer,
                       preload=(not self.args.is_infer))
         self.datasets = [train_reader, test_reader]
@@ -178,7 +150,7 @@ def parse_args():
     parser.add_argument('--saving_period', type=int, default=100)
     parser.add_argument('--pre_emb', default='')
     parser.add_argument('--task', default='train')
-    parser.add_argument('--algo', default='bidaf', help='bidaf|mlstm|rank')
+    parser.add_argument('--algo', default='bidaf', help='bidaf|mlstm|yesno')
     parser.add_argument('--learning_rate', default=1e-3, type=float)
     parser.add_argument('--log_period', default=10, type=int)
     parser.add_argument('--l2', default=2e-4, type=float)

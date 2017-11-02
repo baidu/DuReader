@@ -22,6 +22,7 @@ import paddle.v2.data_type as data_type
 import paddle.v2 as paddle
 
 from utils import compute_bleu_rouge
+from utils import normalize
 
 logger = logging.getLogger("paddle")
 logger.setLevel(logging.INFO)
@@ -228,14 +229,14 @@ class QAModel(object):
                         end_prob_slice)
                 pred_tokens = [] if start_idx > end_idx \
                         else ins['tokens'][start_idx:end_idx + 1]
-                pred = ' '.join(pred_tokens)
-                ref = ins['answers']
+                pred = normalize([' '.join(pred_tokens)])
+                ref = normalize(ins['answers'])
                 idx_len += self.doc_num
                 idx_prob += prob_len * 2
-                pred_obj = {ins['query_id']: [pred]}
+                pred_obj = {ins['query_id']: pred}
                 ref_obj = {ins['query_id']: ref}
                 stored_obj = copy.deepcopy(ins)
-                stored_obj['answers_pred'] = [pred]
+                stored_obj['answers_pred'] = pred
                 objs.append(stored_obj)
                 pred_list.append(pred_obj)
                 ref_list.append(ref_obj)
