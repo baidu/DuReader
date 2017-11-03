@@ -14,9 +14,8 @@ Date: 2017/09/20 12:00:00
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
 import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import pickle
 import argparse
 import logging
