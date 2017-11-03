@@ -206,7 +206,7 @@ class RCModel(object):
             dropout_keep_prob: float value indicating dropout keep probability
         """
         total_num, total_loss = 0, 0
-        log_every_n_batch, n_batch_loss = 100, 0
+        log_every_n_batch, n_batch_loss = 50, 0
         for bitx, batch in enumerate(train_batches, 1):
             feed_dict = {self.p: batch['passage_token_ids'],
                          self.q: batch['query_token_ids'],
@@ -222,6 +222,7 @@ class RCModel(object):
             if log_every_n_batch > 0 and bitx % log_every_n_batch == 0:
                 self.logger.info('Average loss from batch {} to {} is {}'.format(
                     bitx - log_every_n_batch + 1, bitx, n_batch_loss / log_every_n_batch))
+                n_batch_loss = 0
         return 1.0 * total_loss / total_num
 
     def train(self, data, epochs, batch_size, save_dir, save_prefix,

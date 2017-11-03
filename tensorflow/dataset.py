@@ -14,6 +14,7 @@ Date: 2017/09/20 12:00:00
 
 import os
 import json
+import logging
 import numpy as np
 from collections import Counter
 
@@ -24,6 +25,7 @@ class BRCDataset(object):
     """
     def __init__(self, data_dir, task, max_p_num, max_p_len, max_q_len,
                  train=True, dev=True, test=True):
+        self.logger = logging.getLogger("brc")
         self.data_dir = data_dir
         self.task = task
         self.max_p_num = max_p_num
@@ -32,15 +34,15 @@ class BRCDataset(object):
 
         self.train_set = self._load_dataset(self.task + '.train') if train else None
         if train:
-            print('Train set size: {} questions.'.format(len(self.train_set)))
+            self.logger.info('Train set size: {} questions.'.format(len(self.train_set)))
 
         self.dev_set = self._load_dataset(self.task + '.dev') if dev else None
         if dev:
-            print('Dev set size: {} questions.'.format(len(self.dev_set)))
+            self.logger.info('Dev set size: {} questions.'.format(len(self.dev_set)))
 
         self.test_set = self._load_dataset(self.task + '.test') if test else None
         if test:
-            print('Test set size: {} questions.'.format(len(self.test_set)))
+            self.logger.info('Test set size: {} questions.'.format(len(self.test_set)))
 
     def _load_dataset(self, prefix):
         """
