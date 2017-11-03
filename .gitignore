@@ -6,3 +6,4 @@ vocab.search
 local
 bleu_metric
 rouge_metric
+.idea/
