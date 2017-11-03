@@ -52,7 +52,7 @@ class BRCDataset(object):
             data_set = []
             for lidx, line in enumerate(fin):
                 sample = json.loads(line.strip())
-                if 'train' in prefix:
+                if 'train' in prefix or 'dev' in prefix:
                     if len(sample['answer_spans']) == 0:
                         continue
                     if sample['answer_spans'][0][1] >= self.max_p_len:
@@ -124,7 +124,7 @@ class BRCDataset(object):
                 batch_data['start_id'].append(gold_passage_offset + sample['answer_spans'][0][0])
                 batch_data['end_id'].append(gold_passage_offset + sample['answer_spans'][0][1])
             else:
-                # fake span for some samples, only valid while evaluating
+                # fake span for some samples, only valid for testing
                 batch_data['start_id'].append(0)
                 batch_data['end_id'].append(0)
         return batch_data
