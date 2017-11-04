@@ -54,11 +54,13 @@ class BRCDataset(object):
             data_set = []
             for lidx, line in enumerate(fin):
                 sample = json.loads(line.strip())
-                if 'train' in prefix or 'dev' in prefix:
+                if 'train' in prefix:
                     if len(sample['answer_spans']) == 0:
                         continue
                     if sample['answer_spans'][0][1] >= self.max_p_len:
                         continue
+
+                if 'answer_docs' in sample:
                     sample['answer_passages'] = sample['answer_docs']
 
                 sample['query_tokens'] = sample['segmented_query']

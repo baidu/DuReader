@@ -81,16 +81,20 @@ def parse_args():
                                help='the dir to output the results')
     path_settings.add_argument('--summary_dir', default='../data/summary/',
                                help='the dir to write tensorboard summary')
-    path_settings.add_argument('--log_path', default='../data/log.out',
+    path_settings.add_argument('--log_path',
                                help='path of the log file. If not set, logs are printed to console')
     return parser.parse_args()
 
 
 def prepare(args):
     """
-    create the directories, prepare the vocabulary and embeddings
+    checks data, creates the directories, prepare the vocabulary and embeddings
     """
     logger = logging.getLogger("brc")
+    logger.info('Checking the data for {} task...'.format(args.task))
+    for suffix in ['train.json', 'dev.json', 'test.json']:
+        data_path = os.path.join(args.brc_dir, args.task + '.' + suffix)
+        assert os.path.exists(data_path), '{} file does not exist.'
     logger.info('Preparing the directories...')
     for dir_path in [args.vocab_dir, args.model_dir, args.result_dir, args.summary_dir]:
         if not os.path.exists(dir_path):
@@ -120,7 +124,7 @@ def prepare(args):
 
 def train(args):
     """
-    train the reading comprehension model
+    trains the reading comprehension model
     """
     logger = logging.getLogger("brc")
     logger.info('Load data_set and vocab...')
@@ -140,7 +144,7 @@ def train(args):
 
 def predict(args):
     """
-    predict answers for dev set and test set
+    predicts answers for dev set and test set
     """
     logger = logging.getLogger("brc")
     logger.info('Load data_set and vocab...')
@@ -153,10 +157,12 @@ def predict(args):
     logger.info('Restoring the model...')
     rc_model = RCModel(vocab, args)
     rc_model.restore(model_dir=args.model_dir, model_prefix=args.task + '.' + args.algo)
+    logger.info('Predicting answers for dev set...')
     dev_batches = brc_data.gen_mini_batches('dev', args.batch_size,
                                             pad_id=vocab.get_id(vocab.pad_token), shuffle=False)
     rc_model.evaluate(dev_batches,
                       result_dir=args.result_dir, result_prefix=args.task + '.dev.predicted')
+    logger.info('Predicting answers for test set...')
     test_batches = brc_data.gen_mini_batches('test', args.batch_size,
                                              pad_id=vocab.get_id(vocab.pad_token), shuffle=False)
     rc_model.evaluate(test_batches,

@@ -263,7 +263,7 @@ class RCModel(object):
 
     def evaluate(self, eval_batches, result_dir=None, result_prefix=None, save_full_info=False):
         """
-        Evaluates the model performance on eval_batches
+        Evaluates the model performance on eval_batches and results are saved if specified
         Args:
             eval_batches: iterable batch data
             result_dir: directory to save predicted answers, answers will not be saved if None
@@ -296,8 +296,9 @@ class RCModel(object):
                     pred_answers.append(sample)
                 else:
                     pred_answers.append({'query_id': sample['query_id'],
+                                         'query_type': sample['query_type'],
                                          'answers': [best_answer],
-                                         'entities': [],
+                                         'entities': [[]],
                                          'yesno_answers': []})
 
         if result_dir is not None and result_prefix is not None:
@@ -306,9 +307,9 @@ class RCModel(object):
                 for pred_answer in pred_answers:
                     fout.write(json.dumps(pred_answer, encoding='utf8', ensure_ascii=False) + '\n')
 
-            self.logger.log('Saving results with prefix to {}'.format(result_prefix, result_file))
+            self.logger.info('Saving {} results to {}'.format(result_prefix, result_file))
 
-        # this average loss is invalid when testing, since we don't use fake start_id and end_id
+        # this average loss is invalid on test set, since we don't have true start_id and end_id
         return 1.0 * total_loss / total_num
 
     def find_best_answer(self, sample, start_prob, end_prob, padded_p_len):
