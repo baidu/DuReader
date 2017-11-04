@@ -51,7 +51,7 @@ def data_check(obj):
     """
     assert 'query_id' in obj, "Missing 'query_id' field."
     assert 'yesno_answers' in obj, \
-            "Missing 'yesno_answers' filed. query_id: {}".format(obj['query_id'])
+            "Missing 'yesno_answers' field. query_id: {}".format(obj['query_id'])
     assert 'entities' in obj, \
             "Missing 'entities' field. query_id: {}".format(obj['query_id'])
     assert 'query_type' in obj, \
@@ -65,11 +65,6 @@ def data_check(obj):
             r"""'yesno_answers' field must be a list, if the 'query_type' is not
             'YES_NO', then this field should be an empty list.
             query_id: {}""".format(obj['query_id'])
-
-    if obj['query_type'] == 'YES_NO':
-        assert len(obj['answers']) == len(obj['yesno_answers']), \
-                r"""'yesno_answers' and 'answers' must have same length.
-                query_id: {}""".format(obj['quer_id'])
 
 
 def read_file(file_name, type='predict'):
@@ -89,14 +84,21 @@ def read_file(file_name, type='predict'):
         - entities: A list, each element is also a list containing the entities
                     tagged out from the corresponding answer string.
     """
+    def _open(file_name, mode, zip_obj=None):
+        if zip_obj is not None:
+            return zip_obj.open(file_name, mode)
+        return open(file_name, mode)
+
     results = {}
     keys = ['answers', 'yesno_answers', 'entities', 'query_type']
     if type == 'reference':
         keys += ['source']
 
-    zf = zipfile.ZipFile(file_name, 'r')
-    for fn in zf.namelist():
-        for line in zf.open(fn, 'r'):
+    zf = zipfile.ZipFile(file_name, 'r') if file_name.endswith('.zip') else None
+    file_list = [file_name] if zf is None else zf.namelist()
+
+    for fn in file_list:
+        for line in _open(fn, 'r', zip_obj=zf):
             try:
                 obj = json.loads(line.strip())
             except ValueError:
@@ -297,7 +299,7 @@ def get_entity_result(qid, pred_result, ref_result):
         one contains reference result of the same query_id. Each list has
         elements of tuple (query_id, answers), 'answers' is a list of strings.
     """
-    if ref_result[qid]['query_type'] != 'YES_NO':
+    if ref_result[qid]['query_type'] != 'ENTITY':
         return None, None
     return get_basic_result(qid, pred_result, ref_result)
 
