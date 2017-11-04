@@ -53,13 +53,13 @@ class QAModel(object):
         if self.is_infer:
             expected = ['q_ids', 'p_ids', 'para_length',
                         '[start_label, end_label, ...]']
-            if len(self.inputs) < 3:
+            if len(self.inputs) < 2 * self.doc_num + 1:
                 raise ValueError(r'''Input schema: expected vs given:
                          {} vs {}'''.format(expected, self.inputs))
         else:
             expected = ['q_ids', 'p_ids', 'para_length',
                         'start_label', 'end_label', '...']
-            if len(self.inputs) < 5:
+            if len(self.inputs) < 4 * self.doc_num + 1:
                 raise ValueError(r'''Input schema: expected vs given:
                          {} vs {}'''.format(expected, self.inputs))
             self.start_labels = []

@@ -365,7 +365,7 @@ if __name__ == '__main__':
             vocab_file=vocab,
             preload=False,
             max_p_len=300,
-            is_infer=True,
+            is_infer=False,
             append_raw=False,
             vocab_size=218967)
 

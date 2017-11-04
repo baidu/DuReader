@@ -148,7 +148,6 @@ class OpinionClassifier(MatchLstm):
         Processes and evaluates the inferred result of one batch.
         """
         results, stored_objs = self.__parse_infer_ret(ret)
-        #print >> sys.stderr, '+++:', len(results), len(stored_objs)
         with open(infer_file, 'w') as inf:
             for obj in stored_objs:
                 sorted_ans = sorted(obj['yesno_answers'], key=lambda x: x[0])
