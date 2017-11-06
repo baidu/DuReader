@@ -17,22 +17,20 @@ import os
 import sys
 import random
 from brc_eval import compute_metrics_from_list
+from find_answer import find_best_query_match
 
 EMPTY = ''
-
 YESNO_LABELS = {
         'None': 0,
         'Yes': 1,
         'No': 2,
         'Depends': 3}
 
-
 def getid(query):
     """
     compute id.
     """
     m = hashlib.md5()
-    #print >> sys.stderr, '===', query.encode('utf8'), type(query)
     m.update(query.encode('utf8'))
     return m.hexdigest()
 
@@ -156,7 +154,9 @@ def build_yesno_exp(obj):
 
     reverse_dict = {v: k for k, v in YESNO_LABELS.items()}
     answers = obj['pred_answers']
-    labels_raw = obj['yesno_answers_pred']
+    labels_raw = [
+            x[1]
+            for x in sorted(obj['yesno_answers_pred'], key=lambda x: x[0])]
     labels = [reverse_dict[i] for i in labels_raw]
     qid = getid(obj['query'])
     for ans, lbl in zip(answers, labels):
@@ -164,10 +164,46 @@ def build_yesno_exp(obj):
         result = {key: [ans]}
         ret_list.append(result)
 
+    keys = set()
+    no_dup_list = []
+    for result in ret_list:
+        if result.keys()[0] not in keys:
+            no_dup_list.append(result)
+            keys.add(result.keys()[0])
+
     for lbl in set(YESNO_LABELS.keys()) - set(labels):
         key = qid + '_' + lbl
         result = {key: [EMPTY]}
-        ret_list.append(result)
+        no_dup_list.append(result)
+
+    return no_dup_list
+
+
+def build_yesno_selected(obj):
+    """
+    A control exp on selected passage, which is selected according to
+    recall of query tokens.
+    """
+    ret_list = []
+    if obj['query_type'] != 'YES_NO':
+        return ret_list
+
+    docs = obj['documents']
+    selected_paras = []
+    for d in docs:
+        most_related_id, score = find_best_query_match(d,
+                obj['segmented_query'],
+                with_score=True)
+        selected_paras.append(
+                (d['segmented_paragraphs'][most_related_id], score))
+
+    answer = ''.join(
+            sorted(selected_paras, key=lambda x: x[1], reverse=True)[0][0])
+    labels = YESNO_LABELS.keys()
+    answers = [answer] * len(labels)
+    qid = getid(obj['query'])
+    for ans, lbl in zip(answers, labels):
+        ret_list.append({qid + '_' + lbl: [ans]})
 
     return ret_list
 
@@ -177,7 +213,9 @@ def build_normal(obj):
     Normal answer result.
     """
     ret_list = []
-    answers = obj['pred_answers']
+    if obj['query_type'] == 'YES_NO':
+        return build_yesno_exp(obj)
+    answers = obj['pred_answers'][:1]
     qid = getid(obj['query'])
     result = {qid: answers}
     ret_list.append(result)
@@ -189,11 +227,38 @@ def build_normal_golden(obj):
     build normal golden
     """
     ret_list = []
+    if obj['query_type'] == 'YES_NO':
+        return build_yesno_golden(obj)
     answers = obj['answers']
     qid = getid(obj['query'])
     result = {qid: answers}
     ret_list.append(result)
     return ret_list
+
+
+def build_normal_human(obj):
+    """
+    build normal human results.
+    """
+    ret_list = []
+    if obj['query_type'] == 'YES_NO':
+        return build_yesno_human(obj)
+
+    answer = obj['answers_by_annotator_2'][0] \
+            if len(obj['answers_by_annotator_2']) > 0 \
+            else EMPTY
+    qid = getid(obj['query'])
+    ret_list.append({qid: [answer]})
+    return ret_list
+
+
+def build_normal_human_golden(obj):
+    """
+    build golden results for human normal.
+    """
+    if obj['query_type'] == 'YES_NO':
+        return build_yesno_golden(obj)
+    return build_normal_golden(obj)
 
 
 def merge_dict(li_pred, li_ref):
@@ -211,7 +276,8 @@ def merge_dict(li_pred, li_ref):
 
     pred_dict = reduce(__merge_one, li_pred)
     ref_dict = reduce(__merge_one, li_ref)
-    assert set(pred_dict.keys()) == set(ref_dict.keys())
+    assert set(pred_dict.keys()) == set(ref_dict.keys()), \
+            '{} vs {}'.format(pred_dict.keys(), ref_dict.keys())
     for qid in set(pred_dict.keys()):
         if (len(ref_dict[qid]) == 0 and len(pred_dict[qid]) == 0) \
                 or (ref_dict[qid] == [EMPTY] and pred_dict[qid] == [EMPTY]):
@@ -235,9 +301,6 @@ def get_metrics(pred_results, ref_results):
 
 
 def main():
-    """
-    The main logic.
-    """
     normal_results = []
     normal_golden_results = []
     yesno_exp_results = []
@@ -245,6 +308,9 @@ def main():
     yesno_ctrl_results = []
     yesno_human_results = []
     yesno_golden_results = []
+    yesno_selected_results = []
+    normal_human_results = []
+    normal_human_golden_results = []
     for line in sys.stdin:
         obj = json.loads(line.strip())
         normal_results += build_normal(obj)
@@ -253,7 +319,10 @@ def main():
         yesno_random_results += build_yesno_random(obj)
         yesno_ctrl_results += build_yesno_ctrl(obj)
         yesno_human_results += build_yesno_human(obj)
+        normal_human_results += build_normal_human(obj)
+        normal_human_golden_results += build_normal_human_golden(obj)
         yesno_golden_results += build_yesno_golden(obj)
+        yesno_selected_results += build_yesno_selected(obj)
 
     yesno_ctrl_metric = get_metrics(yesno_ctrl_results,
             yesno_golden_results)
@@ -264,12 +333,19 @@ def main():
     yesno_human_metric = get_metrics(yesno_human_results,
             yesno_golden_results)
     normal_metric = get_metrics(normal_results, normal_golden_results)
+    yesno_selected_metric = get_metrics(yesno_selected_results,
+            yesno_golden_results)
+
+    normal_human_metric = get_metrics(normal_human_results,
+            normal_human_golden_results)
 
     print 'ctrl: ', yesno_ctrl_metric
     print 'human:', yesno_human_metric
     print 'random:', yesno_random_metric
     print 'exp:', yesno_exp_metric
     print 'normal: ', normal_metric
+    print 'selected: ', yesno_selected_metric
+    print 'normal_human2: ', normal_human_metric
 
 
 if __name__ == '__main__':
