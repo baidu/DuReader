@@ -31,6 +31,7 @@ YESNO_LABELS = {
         'No': 2,
         'Depends': 3}
 
+
 def getid(query):
     """
     compute id.
@@ -40,13 +41,18 @@ def getid(query):
     return m.hexdigest()
 
 
-def build_yesno_golden(obj):
+def build_yesno_subtype_golden(obj, subtype):
     """
     Get golden reference of query_id.
     """
     ret_list = []
     if obj['query_type'] != 'YES_NO':
         return ret_list
+
+    if subtype != 0:
+        if obj['yesno_type'] != subtype:
+            return ret_list
+
     answers = obj['answers']
     yesno_answers = obj['yesno_answers']
     assert len(answers) == len(yesno_answers), \
@@ -65,17 +71,20 @@ def build_yesno_golden(obj):
         result[key] = result.get(key, [])
         result[key].append(EMPTY)
         ret_list.append(result)
-
     return ret_list
 
 
-def build_yesno_human(obj):
+def build_yesno_subtype_human(obj, subtype):
     """
     Get human result.
     """
     ret_list = []
     if obj['query_type'] != 'YES_NO':
         return ret_list
+    if subtype != 0:
+        if obj['yesno_type'] != subtype:
+            return ret_list
+
     answers = obj['answers_by_annotator_2']
     labels = obj['yesno_answers_by_annotator_2']
     qid = getid(obj['query'])
@@ -103,13 +112,17 @@ def build_yesno_human(obj):
     return no_dup_list
 
 
-def build_yesno_ctrl(obj):
+def build_yesno_subtype_ctrl(obj, subtype):
     """
     Get control experiment result.
     """
     ret_list = []
     if obj['query_type'] != 'YES_NO':
         return ret_list
+    if subtype != 0:
+        if obj['yesno_type'] != subtype:
+            return ret_list
+
     answers = obj['pred_answers']
     labels = YESNO_LABELS.keys()
     answers_exp = answers * len(labels)
@@ -149,13 +162,17 @@ def build_yesno_random(obj):
     return ret_list
 
 
-def build_yesno_exp(obj):
+def build_yesno_subtype_exp(obj, subtype):
     """
     Get results of experiment.
     """
     ret_list = []
     if obj['query_type'] != 'YES_NO':
         return ret_list
+
+    if subtype != 0:
+        if obj['yesno_type'] != subtype:
+            return ret_list
 
     reverse_dict = {v: k for k, v in YESNO_LABELS.items()}
     answers = obj['pred_answers']
@@ -219,7 +236,7 @@ def build_normal(obj):
     """
     ret_list = []
     if obj['query_type'] == 'YES_NO':
-        return build_yesno_exp(obj)
+        return build_yesno_subtype_exp(obj, 0)
     answers = obj['pred_answers'][:1]
     qid = getid(obj['query'])
     result = {qid: answers}
@@ -233,7 +250,7 @@ def build_normal_golden(obj):
     """
     ret_list = []
     if obj['query_type'] == 'YES_NO':
-        return build_yesno_golden(obj)
+        return build_yesno_subtype_golden(obj, 0)
     answers = obj['answers']
     qid = getid(obj['query'])
     result = {qid: answers}
@@ -247,7 +264,7 @@ def build_normal_human(obj):
     """
     ret_list = []
     if obj['query_type'] == 'YES_NO':
-        return build_yesno_human(obj)
+        return build_yesno_subtype_human(obj, 0)
 
     answer = obj['answers_by_annotator_2'][0] \
             if len(obj['answers_by_annotator_2']) > 0 \
@@ -262,7 +279,7 @@ def build_normal_human_golden(obj):
     build golden results for human normal.
     """
     if obj['query_type'] == 'YES_NO':
-        return build_yesno_golden(obj)
+        return build_yesno_subtype_golden(obj, 0)
     return build_normal_golden(obj)
 
 
@@ -308,11 +325,25 @@ def get_metrics(pred_results, ref_results):
 def main():
     normal_results = []
     normal_golden_results = []
+
     yesno_exp_results = []
+    yesno_type1_exp_results = []
+    yesno_type2_exp_results = []
+
     yesno_random_results = []
+
     yesno_ctrl_results = []
+    yesno_type1_ctrl_results = []
+    yesno_type2_ctrl_results = []
+
     yesno_human_results = []
+    yesno_type1_human_results = []
+    yesno_type2_human_results = []
+
     yesno_golden_results = []
+    yesno_type1_golden_results = []
+    yesno_type2_golden_results = []
+
     yesno_selected_results = []
     normal_human_results = []
     normal_human_golden_results = []
@@ -320,23 +351,54 @@ def main():
         obj = json.loads(line.strip())
         normal_results += build_normal(obj)
         normal_golden_results += build_normal_golden(obj)
-        yesno_exp_results += build_yesno_exp(obj)
+
+        yesno_exp_results += build_yesno_subtype_exp(obj, 0)
+        yesno_type1_exp_results += build_yesno_subtype_exp(obj, 1)
+        yesno_type2_exp_results += build_yesno_subtype_exp(obj, 2)
+
         yesno_random_results += build_yesno_random(obj)
-        yesno_ctrl_results += build_yesno_ctrl(obj)
-        yesno_human_results += build_yesno_human(obj)
+
+        yesno_ctrl_results += build_yesno_subtype_ctrl(obj, 0)
+        yesno_type1_ctrl_results += build_yesno_subtype_ctrl(obj, 1)
+        yesno_type2_ctrl_results += build_yesno_subtype_ctrl(obj, 2)
+
+        yesno_human_results += build_yesno_subtype_human(obj, 0)
+        yesno_type1_human_results += build_yesno_subtype_human(obj, 1)
+        yesno_type2_human_results += build_yesno_subtype_human(obj, 2)
+
         normal_human_results += build_normal_human(obj)
         normal_human_golden_results += build_normal_human_golden(obj)
-        yesno_golden_results += build_yesno_golden(obj)
+
+        yesno_golden_results += build_yesno_subtype_golden(obj, 0)
+        yesno_type1_golden_results += build_yesno_subtype_golden(obj, 1)
+        yesno_type2_golden_results += build_yesno_subtype_golden(obj, 2)
+
         yesno_selected_results += build_yesno_selected(obj)
 
     yesno_ctrl_metric = get_metrics(yesno_ctrl_results,
             yesno_golden_results)
+    yesno_type1_ctrl_metric = get_metrics(yesno_type1_ctrl_results,
+            yesno_type1_golden_results)
+    yesno_type2_ctrl_metric = get_metrics(yesno_type2_ctrl_results,
+            yesno_type2_golden_results)
+
     yesno_exp_metric = get_metrics(yesno_exp_results,
             yesno_golden_results)
+    yesno_type1_exp_metric = get_metrics(yesno_type1_exp_results,
+            yesno_type1_golden_results)
+    yesno_type2_exp_metric = get_metrics(yesno_type2_exp_results,
+            yesno_type2_golden_results)
+
     yesno_random_metric = get_metrics(yesno_random_results,
             yesno_golden_results)
+
     yesno_human_metric = get_metrics(yesno_human_results,
             yesno_golden_results)
+    yesno_type1_human_metric = get_metrics(yesno_type1_human_results,
+            yesno_type1_golden_results)
+    yesno_type2_human_metric = get_metrics(yesno_type2_human_results,
+            yesno_type2_golden_results)
+
     normal_metric = get_metrics(normal_results, normal_golden_results)
     yesno_selected_metric = get_metrics(yesno_selected_results,
             yesno_golden_results)
@@ -345,9 +407,19 @@ def main():
             normal_human_golden_results)
 
     print 'ctrl: ', yesno_ctrl_metric
+    print 'yesno_type1_ctrl', yesno_type1_ctrl_metric
+    print 'yesno_type2_ctrl', yesno_type2_ctrl_metric
+
     print 'human:', yesno_human_metric
+    print 'yesno_type1_human:', yesno_type1_human_metric
+    print 'yesno_type2_human:', yesno_type2_human_metric
+
     print 'random:', yesno_random_metric
+
     print 'exp:', yesno_exp_metric
+    print 'yesno_type1_exp', yesno_type1_exp_metric
+    print 'yesno_type2_exp', yesno_type2_exp_metric
+
     print 'normal: ', normal_metric
     print 'selected: ', yesno_selected_metric
     print 'normal_human2: ', normal_human_metric

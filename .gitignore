@@ -7,3 +7,5 @@ local
 bleu_metric
 rouge_metric
 .idea/
+add_copyright.py
+copyright
