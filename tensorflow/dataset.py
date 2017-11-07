@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 """
-This module implements the BiDAF algorithm described in
+This module implements data process strategies.
 https://arxiv.org/abs/1611.01603
 
 Authors: Yizhong Wang(wangyizhong01@baidu.com)

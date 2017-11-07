@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 """
-Implements the whole entrance for the system.
+Prepares and runs the whole system.
 
 Authors: liuyuan(liuyuan04@baidu.com)
 Date: 2017/09/20 12:00:00
