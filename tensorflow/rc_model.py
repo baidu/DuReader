@@ -14,7 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+This module implements the reading comprehension models based on:
+1. the BiDAF algorithm described in https://arxiv.org/abs/1611.01603
+2. the Match-LSTM algorithm described in https://openreview.net/pdf?id=B1-q5Pqxl
+Note that we use Pointer Network for the decoding stage of both models.
 
+Authors: Yizhong Wang(wangyizhong01@baidu.com)
+Date: 2017/09/20 12:00:00
+"""
 
 import os
 import time

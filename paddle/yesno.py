@@ -14,7 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+This module implements an opinion classification model to classify a
+query answer pair into 4 categories: None(no opinion), Yes(positive opinion),
+No(negative opinion), Depends(depends on conditions).
 
+Authors: liuyuan(liuyuan04@baidu.com)
+Date: 2017/09/20 12:00:00
+"""
 
 import hashlib
 import logging

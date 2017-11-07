@@ -14,7 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+This module implements the match-lstm algorithm described in
+https://arxiv.org/abs/1608.07905
 
+Authors: liuyuan(liuyuan04@baidu.com)
+Date: 2017/09/20 12:00:00
+"""
 
 from paddle.trainer.config_parser import default_initial_std
 import paddle.v2.layer as layer

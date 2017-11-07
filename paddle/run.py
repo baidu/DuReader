@@ -14,7 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+Implements the whole entrance for the system.
 
+Authors: liuyuan(liuyuan04@baidu.com)
+Date: 2017/09/20 12:00:00
+"""
 
 import argparse
 import logging

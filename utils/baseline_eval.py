@@ -14,6 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+This module computes evaluation metrics for DuReader dataset.
+
+Authors: liuyuan(liuyuan04@baidu.com)
+Date: 2017/10/26 12:00:00
+"""
 
 
 import hashlib

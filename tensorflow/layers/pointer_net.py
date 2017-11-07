@@ -14,7 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+This module implements the Pointer Network for selecting answer spans, as described in:
+https://openreview.net/pdf?id=B1-q5Pqxl
 
+Authors: Yizhong Wang(wangyizhong01@baidu.com)
+Date: 2017/09/20 12:00:00
+"""
 
 import tensorflow as tf
 import tensorflow.contrib as tc

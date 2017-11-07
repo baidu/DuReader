@@ -14,7 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+This module implements the basic common functions of the Match-LSTM and BiDAF
+networks.
 
+Authors: liuyuan(liuyuan04@baidu.com)
+Date: 2017/09/20 12:00:00
+"""
 
 import copy
 import math

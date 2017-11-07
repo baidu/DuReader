@@ -14,7 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+This module implements the BiDAF algorithm described in
+https://arxiv.org/abs/1611.01603
 
+Authors: Yizhong Wang(wangyizhong01@baidu.com)
+Date: 2017/09/20 12:00:00
+"""
 
 import os
 import json

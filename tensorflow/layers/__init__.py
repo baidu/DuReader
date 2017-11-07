@@ -14,3 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+Empty __init__.py file
+
+Authors: Yizhong Wang(wangyizhong01@baidu.com)
+Date: 2017/09/20 12:00:00
+"""

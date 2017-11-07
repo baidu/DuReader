@@ -14,7 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+Implements data parsers for different tasks on DuReader dataset.
 
+Authors: liuyuan(liuyuan04@baidu.com)
+Data: 2017/09/20 12:00:00
+"""
 
 import copy
 import hashlib

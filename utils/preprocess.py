@@ -14,6 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+This module finds the most related paragraph of each document according to ngram records.
+Authors: wangyizhong(wangyizhong01@baidu.com)
+Date:    2017/10/06 18:23:06
+"""
 
 
 import sys

@@ -14,6 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+"""
+This package implements some utility functions shared by PaddlePaddle
+and Tensorflow model implementations.
+
+Authors: liuyuan(liuyuan04@baidu.com)
+Date:    2017/10/06 18:23:06
+"""
 
 
 from .dureader_eval import compute_bleu_rouge
