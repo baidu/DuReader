@@ -44,8 +44,10 @@ def parse_args():
                         help='create the directories, prepare the vocabulary and embeddings')
     parser.add_argument('--train', action='store_true',
                         help='train the model')
+    parser.add_argument('--evaluate', action='store_true',
+                        help='evaluate the model on dev set')
     parser.add_argument('--predict', action='store_true',
-                        help='predict the answers with trained model')
+                        help='predict the answers for test set with trained model')
     parser.add_argument('--task', type=str, default='both',
                         help='reading comprehension on search/zhidao/both dataset')
     parser.add_argument('--gpu', type=str, default='0',
@@ -153,9 +155,34 @@ def train(args):
     logger.info('Done with model training!')
 
 
+def evaluate(args):
+    """
+    evaluate the trained model on dev set
+    """
+    logger = logging.getLogger("brc")
+    logger.info('Load data_set and vocab...')
+    with open(os.path.join(args.vocab_dir, args.task + '.' + 'vocab.data'), 'rb') as fin:
+        vocab = pickle.load(fin)
+    brc_data = BRCDataset(args.brc_dir, args.task,
+                          args.max_p_num, args.max_p_len, args.max_q_len, train=False, test=False)
+    logger.info('Converting text into ids...')
+    brc_data.convert_to_ids(vocab)
+    logger.info('Restoring the model...')
+    rc_model = RCModel(vocab, args)
+    rc_model.restore(model_dir=args.model_dir, model_prefix=args.task + '.' + args.algo)
+    logger.info('Evaluating the model on dev set...')
+    dev_batches = brc_data.gen_mini_batches('dev', args.batch_size,
+                                            pad_id=vocab.get_id(vocab.pad_token), shuffle=False)
+    dev_loss, dev_bleu_rouge = rc_model.evaluate(
+        dev_batches, result_dir=args.result_dir, result_prefix=args.task + '.dev.predicted')
+    logger.info('Loss on dev set: {}'.format(dev_loss))
+    logger.info('Result on dev set: {}'.format(dev_bleu_rouge))
+    logger.info('Predicted answers are saved to {}'.format(os.path.join(args.result_dir)))
+
+
 def predict(args):
     """
-    predicts answers for dev set and test set
+    predicts answers for test set
     """
     logger = logging.getLogger("brc")
     logger.info('Load data_set and vocab...')
@@ -168,11 +195,6 @@ def predict(args):
     logger.info('Restoring the model...')
     rc_model = RCModel(vocab, args)
     rc_model.restore(model_dir=args.model_dir, model_prefix=args.task + '.' + args.algo)
-    logger.info('Predicting answers for dev set...')
-    dev_batches = brc_data.gen_mini_batches('dev', args.batch_size,
-                                            pad_id=vocab.get_id(vocab.pad_token), shuffle=False)
-    rc_model.evaluate(dev_batches,
-                      result_dir=args.result_dir, result_prefix=args.task + '.dev.predicted')
     logger.info('Predicting answers for test set...')
     test_batches = brc_data.gen_mini_batches('test', args.batch_size,
                                              pad_id=vocab.get_id(vocab.pad_token), shuffle=False)
@@ -209,6 +231,8 @@ def run():
         prepare(args)
     if args.train:
         train(args)
+    if args.evaluate:
+        evaluate(args)
     if args.predict:
         predict(args)
 
