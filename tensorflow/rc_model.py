@@ -30,6 +30,7 @@ import logging
 import json
 import numpy as np
 import tensorflow as tf
+from utils import compute_bleu_rouge
 from layers.basic_rnn import rnn
 from layers.match_layer import MatchLSTMLayer
 from layers.match_layer import AttentionFlowMatchLayer
@@ -249,7 +250,7 @@ class RCModel(object):
             evaluate: whether to evaluate the model on test set after each epoch
         """
         pad_id = self.vocab.get_id(self.vocab.pad_token)
-        min_dev_loss = None
+        max_bleu_4 = 0
         for epoch in range(1, epochs + 1):
             self.logger.info('Training the model for epoch {}'.format(epoch))
             train_batches = data.gen_mini_batches('train', batch_size, pad_id, shuffle=True)
@@ -260,14 +261,15 @@ class RCModel(object):
                 self.logger.info('Evaluating the model after epoch {}'.format(epoch))
                 if data.dev_set is not None:
                     eval_batches = data.gen_mini_batches('dev', batch_size, pad_id, shuffle=False)
-                    eval_loss = self.evaluate(eval_batches)
+                    eval_loss, bleu_rouge = self.evaluate(eval_batches)
                     self.logger.info('Dev eval loss {}'.format(eval_loss))
+                    self.logger.info('Dev eval result: {}'.format(bleu_rouge))
 
-                    if min_dev_loss is None or eval_loss < min_dev_loss:
+                    if bleu_rouge['bleu_4'] > max_bleu_4:
                         self.save(save_dir, save_prefix)
-                        min_dev_loss = eval_loss
+                        max_bleu_4 = bleu_rouge['bleu4']
                 else:
-                    self.logger.warning('No dev set is loaded in the dataset!')
+                    self.logger.warning('No dev set is loaded for evaluation in the dataset!')
             else:
                 self.save(save_dir, save_prefix + '_' + str(epoch))
 
@@ -281,7 +283,7 @@ class RCModel(object):
                            answers will not be saved if None
             save_full_info: if True, the pred_answers will be added to raw sample and saved
         """
-        pred_answers = []
+        pred_answers, gold_answers = [], []
         total_loss, total_num = 0, 0
         for b_itx, batch in enumerate(eval_batches):
             feed_dict = {self.p: batch['passage_token_ids'],
@@ -310,6 +312,12 @@ class RCModel(object):
                                          'answers': [best_answer],
                                          'entities': [[]],
                                          'yesno_answers': []})
+                if 'answers' in sample:
+                    gold_answers.append({'query_id': sample['query_id'],
+                                         'query_type': sample['query_type'],
+                                         'answers': sample['answers'],
+                                         'entities': [[]],
+                                         'yesno_answers': []})
 
         if result_dir is not None and result_prefix is not None:
             result_file = os.path.join(result_dir, result_prefix + '.json')
@@ -320,7 +328,13 @@ class RCModel(object):
             self.logger.info('Saving {} results to {}'.format(result_prefix, result_file))
 
         # this average loss is invalid on test set, since we don't have true start_id and end_id
-        return 1.0 * total_loss / total_num
+        ave_loss = 1.0 * total_loss / total_num
+        # compute the bleu and rouge scores if gold answers is provided
+        if len(gold_answers) > 0:
+            bleu_rouge = compute_bleu_rouge(pred_answers, gold_answers)
+        else:
+            bleu_rouge = None
+        return ave_loss, bleu_rouge
 
     def find_best_answer(self, sample, start_prob, end_prob, padded_p_len):
         """
