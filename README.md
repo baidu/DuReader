@@ -79,8 +79,9 @@ We also implements the BIDAF and Match-LSTM models based on Tensorflow 1.0. You 
 Before training the model, we have to make sure that the data is ready. For preparation, we will check the data files, make directories and extract a vocabulary for later use. You can run the following command to do this with a specified task name:
 
 ```
-python run.py --prepare --task TASK_NAME
+python run.py --prepare --task zhidao
 ```
+You can choose which dataset to use by set the `--task` as `[search|zhidao|both}`.
 
 ####Training
 To train the reading comprehension model, you can specify the model type by using `--algo [BIDAF|MLSTM]` and you can also set the hyper-parameters such as the learning rate by using `--learning_rate NUM`. For example, to train a BIDAF model on Zhidao Dataset for 10 epochs, you can run:
@@ -89,27 +90,23 @@ To train the reading comprehension model, you can specify the model type by usin
 python run.py --task zhidao --algo BIDAF --epochs 10
 ```
 
-The training process includes a loss-based evaluation on the dev set after each training epoch. By default, the model with the least loss on the dev set will be saved.
+The training process includes an evaluation on the dev set after each training epoch. By default, the model with the least bleu4 score on the dev set will be saved.
+
+####Evaluation
+To conduct a single evaluation on the dev set with the the model already trained, you can run the following command:
+
+```
+python run.py --evaluate --task zhidao
+```
 
 ####Prediction
 You can predict answers for the samples in dev set and test set using the following command:
 
 ```
-python run.py --predict --task zhidao 
+python run.py --predict --task zhidao
 ```
 
-By default, the results are saved at `../data/results/` folder. You can change this by specifying `--result_dir DIR_PATH`. 
-
-### Evaluate Your Results
-
-You can evaluate the results on dev set locally by running the `dureader_eval.py` at `./utils/` folder:
-
-```
-python dureader_eval.py PRED_FILE REF_FILE TASK
-```
-To get the final evaluation on test set, submit your results to us at [our website]()! 
-
-
+By default, the results are saved at `../data/results/` folder. You can change this by specifying `--result_dir DIR_PATH`.
 
 
 ## Copyright and License
