@@ -333,7 +333,7 @@ class RCModel(object):
         if len(ref_answers) > 0:
             pred_dict = {pred['query_id']: pred['answers'] for pred in pred_answers}
             ref_dict = {ref['query_id']: ref['answers'] for ref in ref_answers}
-            bleu_rouge = compute_bleu_rouge(pred_answers, ref_answers)
+            bleu_rouge = compute_bleu_rouge(pred_dict, ref_dict)
         else:
             bleu_rouge = None
         return ave_loss, bleu_rouge
