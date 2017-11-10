@@ -19,9 +19,6 @@ This module implements the reading comprehension models based on:
 1. the BiDAF algorithm described in https://arxiv.org/abs/1611.01603
 2. the Match-LSTM algorithm described in https://openreview.net/pdf?id=B1-q5Pqxl
 Note that we use Pointer Network for the decoding stage of both models.
-
-Authors: Yizhong Wang(wangyizhong01@baidu.com)
-Date: 2017/09/20 12:00:00
 """
 
 import os
@@ -108,7 +105,7 @@ class RCModel(object):
 
     def _embed(self):
         """
-        The embedding layer, query and passage share embeddings
+        The embedding layer, question and passage share embeddings
         """
         with tf.device('/cpu:0'), tf.variable_scope('word_embedding'):
             self.word_embeddings = tf.get_variable(
@@ -122,7 +119,7 @@ class RCModel(object):
 
     def _encode(self):
         """
-        Employs two Bi-LSTMs to encode passage and query separately
+        Employs two Bi-LSTMs to encode passage and question separately
         """
         with tf.variable_scope('passage_encoding'):
             self.sep_p_encodes, _ = rnn('bi-lstm', self.p_emb, self.p_length, self.hidden_size)
@@ -131,7 +128,7 @@ class RCModel(object):
 
     def _match(self):
         """
-        The core of RC model, get the query-aware passage encoding with either BIDAF or MLSTM
+        The core of RC model, get the question-aware passage encoding with either BIDAF or MLSTM
         """
         if self.algo == 'MLSTM':
             match_layer = MatchLSTMLayer(self.hidden_size)
@@ -157,19 +154,19 @@ class RCModel(object):
         Note that we concat the fuse_p_encodes for the passages in the same document.
         And since the encodes of queries in the same document is same, we select the first one.
         """
-        with tf.variable_scope('same_query_concat'):
+        with tf.variable_scope('same_question_concat'):
             batch_size = tf.shape(self.start_label)[0]
             concat_passage_encodes = tf.reshape(
                 self.fuse_p_encodes,
                 [batch_size, -1, 2 * self.hidden_size]
             )
-            no_dup_query_encodes = tf.reshape(
+            no_dup_question_encodes = tf.reshape(
                 self.sep_q_encodes,
                 [batch_size, -1, tf.shape(self.sep_q_encodes)[1], 2 * self.hidden_size]
             )[0:, 0, 0:, 0:]
         decoder = PointerNetDecoder(self.hidden_size)
         self.start_probs, self.end_probs = decoder.decode(concat_passage_encodes,
-                                                          no_dup_query_encodes)
+                                                          no_dup_question_encodes)
 
     def _compute_loss(self):
         """
@@ -221,9 +218,9 @@ class RCModel(object):
         log_every_n_batch, n_batch_loss = 50, 0
         for bitx, batch in enumerate(train_batches, 1):
             feed_dict = {self.p: batch['passage_token_ids'],
-                         self.q: batch['query_token_ids'],
+                         self.q: batch['question_token_ids'],
                          self.p_length: batch['passage_length'],
-                         self.q_length: batch['query_length'],
+                         self.q_length: batch['question_length'],
                          self.start_label: batch['start_id'],
                          self.end_label: batch['end_id'],
                          self.dropout_keep_prob: dropout_keep_prob}
@@ -288,9 +285,9 @@ class RCModel(object):
         total_loss, total_num = 0, 0
         for b_itx, batch in enumerate(eval_batches):
             feed_dict = {self.p: batch['passage_token_ids'],
-                         self.q: batch['query_token_ids'],
+                         self.q: batch['question_token_ids'],
                          self.p_length: batch['passage_length'],
-                         self.q_length: batch['query_length'],
+                         self.q_length: batch['question_length'],
                          self.start_label: batch['start_id'],
                          self.end_label: batch['end_id'],
                          self.dropout_keep_prob: 1.0}
@@ -308,14 +305,14 @@ class RCModel(object):
                     sample['pred_answers'] = [best_answer]
                     pred_answers.append(sample)
                 else:
-                    pred_answers.append({'query_id': sample['query_id'],
-                                         'query_type': sample['query_type'],
+                    pred_answers.append({'question_id': sample['question_id'],
+                                         'question_type': sample['question_type'],
                                          'answers': [best_answer],
                                          'entities': [[]],
                                          'yesno_answers': []})
                 if 'answers' in sample:
-                    ref_answers.append({'query_id': sample['query_id'],
-                                         'query_type': sample['query_type'],
+                    ref_answers.append({'question_id': sample['question_id'],
+                                         'question_type': sample['question_type'],
                                          'answers': sample['answers'],
                                          'entities': [[]],
                                          'yesno_answers': []})
@@ -334,10 +331,10 @@ class RCModel(object):
         if len(ref_answers) > 0:
             pred_dict, ref_dict = {}, {}
             for pred, ref in zip(pred_answers, ref_answers):
-                query_id = ref['query_id']
+                question_id = ref['question_id']
                 if len(ref['answers']) > 0:
-                    pred_dict[query_id] = normalize(pred['answers'])
-                    ref_dict[query_id] = normalize(ref['answers'])
+                    pred_dict[question_id] = normalize(pred['answers'])
+                    ref_dict[question_id] = normalize(ref['answers'])
             bleu_rouge = compute_bleu_rouge(pred_dict, ref_dict)
         else:
             bleu_rouge = None

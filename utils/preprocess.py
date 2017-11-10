@@ -15,17 +15,12 @@
 # limitations under the License.
 # ==============================================================================
 """
-This module finds the most related paragraph of each document according to ngram records.
-Authors: wangyizhong(wangyizhong01@baidu.com)
-Date:    2017/10/06 18:23:06
+This module finds the most related paragraph of each document according to recall.
 """
 
-
 import sys
-
 reload(sys)
 sys.setdefaultencoding('utf8')
-
 import json
 from collections import Counter
 
@@ -106,12 +101,12 @@ def metric_max_over_ground_truths(metric_fn, prediction, ground_truths):
     return max(scores_for_ground_truths)
 
 
-def find_best_query_match(doc, query, with_score=False):
+def find_best_question_match(doc, question, with_score=False):
     """
-    For each docment, find the paragraph that matches best to the query.
+    For each docment, find the paragraph that matches best to the question.
     Args:
         doc: The document object.
-        query: The query tokens.
+        question: The question tokens.
         with_score: If True then the match score will be returned,
             otherwise False.
     Returns:
@@ -123,10 +118,10 @@ def find_best_query_match(doc, query, with_score=False):
     max_related_score = 0
     most_related_para_len = 0
     for p_idx, para_tokens in enumerate(doc['segmented_paragraphs']):
-        if len(query) > 0:
+        if len(question) > 0:
             related_score = metric_max_over_ground_truths(recall,
                     para_tokens,
-                    query)
+                    question)
         else:
             related_score = 0
 

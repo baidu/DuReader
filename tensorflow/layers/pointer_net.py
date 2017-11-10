@@ -17,9 +17,6 @@
 """
 This module implements the Pointer Network for selecting answer spans, as described in:
 https://openreview.net/pdf?id=B1-q5Pqxl
-
-Authors: Yizhong Wang(wangyizhong01@baidu.com)
-Date: 2017/09/20 12:00:00
 """
 
 import tensorflow as tf
@@ -142,29 +139,29 @@ class PointerNetDecoder(object):
     def __init__(self, hidden_size):
         self.hidden_size = hidden_size
 
-    def decode(self, passage_vectors, query_vectors, init_with_query=True):
+    def decode(self, passage_vectors, question_vectors, init_with_question=True):
         """
         Use Pointer Network to compute the probabilities of each position
         to be start and end of the answer
         Args:
             passage_vectors: the encoded passage vectors
-            query_vectors: the encoded query vectors
-            init_with_query: if set to be true,
-                             we will use the query_vectors to init the state of Pointer Network
+            question_vectors: the encoded question vectors
+            init_with_question: if set to be true,
+                             we will use the question_vectors to init the state of Pointer Network
         Returns:
             the probs of evary position to be start and end of the answer
         """
         with tf.variable_scope('pn_decoder'):
             fake_inputs = tf.zeros([tf.shape(passage_vectors)[0], 2, 1])  # not used
             sequence_len = tf.tile([2], [tf.shape(passage_vectors)[0]])
-            if init_with_query:
+            if init_with_question:
                 random_attn_vector = tf.Variable(tf.random_normal([1, self.hidden_size]),
                                                  trainable=True, name="random_attn_vector")
-                pooled_query_rep = tc.layers.fully_connected(
-                    attend_pooling(query_vectors, random_attn_vector, self.hidden_size),
+                pooled_question_rep = tc.layers.fully_connected(
+                    attend_pooling(question_vectors, random_attn_vector, self.hidden_size),
                     num_outputs=self.hidden_size, activation_fn=None
                 )
-                init_state = tc.rnn.LSTMStateTuple(pooled_query_rep, pooled_query_rep)
+                init_state = tc.rnn.LSTMStateTuple(pooled_question_rep, pooled_question_rep)
             else:
                 init_state = None
             with tf.variable_scope('fw'):

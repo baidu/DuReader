@@ -16,9 +16,6 @@
 # ==============================================================================
 """
 This module provides wrappers for variants of RNN in Tensorflow
-
-Authors: Yizhong Wang(wangyizhong01@baidu.com)
-Date: 2017/09/20 12:00:00
 """
 
 import tensorflow as tf
