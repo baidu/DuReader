@@ -1,4 +1,4 @@
-#DuReader Dataset
+# DuReader Dataset
 DuReader is a new large-scale real-world and human sourced MRC dataset in Chinese. DuReader focuses on real-world open-domain question answering. The advantages of DuReader over existing datasets are concluded as follows:
  - Real question
  - Real article
@@ -6,24 +6,24 @@ DuReader is a new large-scale real-world and human sourced MRC dataset in Chines
  - Real application scenario
  - Rich annotation
 
-#DuReader Baseline Systems
+# DuReader Baseline Systems
 DuReader system implements 2 classic reading comprehension models([BiDAF]() and [Match-LSTM]()) on [DuReader dataset](). The system is implemented with 2 frameworks: [PaddlePaddle]() and [TensorFlow]().
 
 ## How to Run
-###Download the Dataset
+### Download the Dataset
 To Download DuReader dataset:
 ```bash
 cd data && bash download.sh
 ```
 For more details about DuReader dataset please refer to [DuReader Homepage]().
-###Preprocess the Data
+### Preprocess the Data
 After the dataset is downloaded, there is still some work to do to run the baseline systems. DuReader dataset offers rich amount of documents for every user question, the documents are too long for popular RC models to cope with. In our baseline models, we preprocess the train set and development set data by selecting the paragraph that is most related to the answer string, while for inferring(no available golden answer), we select the paragraph that is most related to the question string. The preprocessing strategy is implemented in `utils/preprocess.py`. To preprocess the raw data, run:
 ```bash
 cat data/raw/search.train.json | python utils/preprocess.py > data/preprocessed/search.train.json
 ```
 The preprocessing is already included in `data/download.sh`, the preprocessed data is stored in `data/preprocess`, the downloaded raw data is under `data/raw`.
 ### Run PaddlePaddle
-####Environment requirements
+#### Environment requirements
 Install the latest PaddlePaddle by:
 ```bash
 # CPU
@@ -32,7 +32,7 @@ pip install paddlepaddle
 pip install paddlepaddle-gpu
 ```
 To install PaddlePaddle by other ways and for more details about PaddlePaddle, see [PaddlePaddle Homepage]().
-####Training
+#### Training
 We implement 3 models with PaddlePaddle: Match-LSTM, BiDAF, and a classification model for data with `query_type='YES_NO'`, the model simply replaces the Pointer-Net on top of Match-LSTM model with a one-layered classifier. The 3 implemented models can all be trained and inferred by run `run.py`, to specify the model to train or to infer, use `--algo [mlstm|bidaf|yesno]`, for complete usage run `python run.py -h`.
 
 The basic training and inference process has been wrapped in `run.sh`,  the basic usage is:
@@ -55,14 +55,14 @@ models
 ```
 For training, all scripts the experiment uses will first be copied to `env`, and then run from there, and inference process is also run from `env`. `infer` folder keeps the result file created by inference, `log` folder keeps training and inference logs, and `models` folder keeps the models saved during training. 
 
-####Inference
+#### Inference
 To infer a trained model, run the same command as training and change `train` to `infer`,  and add `--testset <path_to_testset>` argument. for example, suppose the 'test_bidaf' experiment is successfully trained,  to infer the saved models, run:
 ```
 bash run.sh test_bidaf bidaf infer \
 	--testset ../data/preprocessed/search.test.json
 ```
 The results corresponding to each model saved is under `infer` folder, and the evaluation metrics is logged into the infer log files under `log`.
-####Test result submission
+#### Test result submission
 You can infer and evaluate your models on development data set locally by following the above steps, once you've developed a model that works to your expectation on the dev set, we highly recommend you to submit your inference result on the released test set to us to evaluate. To get inference file on test set:
 
 1. make sure the training is over.
@@ -75,7 +75,7 @@ You can infer and evaluate your models on development data set locally by follow
 
 We also implements the BIDAF and Match-LSTM models based on Tensorflow 1.0. You can refer to the [official guide](https://www.tensorflow.org/versions/r1.0/install/) for the installation of Tensorflow. The complete options for running our Tensorflow program can be accessed by using `python run.py -h`. Here we demonstrate a typical workflow as follows: 
 
-####Preparation
+#### Preparation
 Before training the model, we have to make sure that the data is ready. For preparation, we will check the data files, make directories and extract a vocabulary for later use. You can run the following command to do this with a specified task name:
 
 ```
@@ -83,7 +83,7 @@ python run.py --prepare --task zhidao
 ```
 You can choose which dataset to use by set the `--task` as `[search|zhidao|both}`.
 
-####Training
+#### Training
 To train the reading comprehension model, you can specify the model type by using `--algo [BIDAF|MLSTM]` and you can also set the hyper-parameters such as the learning rate by using `--learning_rate NUM`. For example, to train a BIDAF model on Zhidao Dataset for 10 epochs, you can run:
 
 ```
@@ -92,14 +92,14 @@ python run.py --task zhidao --algo BIDAF --epochs 10
 
 The training process includes an evaluation on the dev set after each training epoch. By default, the model with the least bleu4 score on the dev set will be saved.
 
-####Evaluation
+#### Evaluation
 To conduct a single evaluation on the dev set with the the model already trained, you can run the following command:
 
 ```
 python run.py --evaluate --task zhidao
 ```
 
-####Prediction
+#### Prediction
 You can predict answers for the samples in dev set and test set using the following command:
 
 ```
