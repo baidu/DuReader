@@ -331,8 +331,12 @@ class RCModel(object):
         ave_loss = 1.0 * total_loss / total_num
         # compute the bleu and rouge scores if reference answers is provided
         if len(ref_answers) > 0:
-            pred_dict = {pred['query_id']: pred['answers'] for pred in pred_answers}
-            ref_dict = {ref['query_id']: ref['answers'] for ref in ref_answers}
+            pred_dict, ref_dict = {}, {}
+            for pred, ref in zip(pred_answers, ref_answers):
+                query_id = ref['query_id']
+                if len(ref['answers']) > 0:
+                    pred_dict[query_id] = pred['answers']
+                    ref_dict[query_id] = ref['answers']
             bleu_rouge = compute_bleu_rouge(pred_dict, ref_dict)
         else:
             bleu_rouge = None
