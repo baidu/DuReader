@@ -132,9 +132,9 @@ class RCModel(object):
         """
         The core of RC model, get the query-aware passage encoding with either BIDAF or MLSTM
         """
-        if self.algo == 'BIDAF':
+        if self.algo == 'MLSTM':
             match_layer = MatchLSTMLayer(self.hidden_size)
-        elif self.algo == 'MLSTM':
+        elif self.algo == 'BIDAF':
             match_layer = AttentionFlowMatchLayer(self.hidden_size)
         else:
             raise NotImplementedError('The algorithm {} is not implemented.'.format(self.algo))
@@ -283,7 +283,7 @@ class RCModel(object):
                            answers will not be saved if None
             save_full_info: if True, the pred_answers will be added to raw sample and saved
         """
-        pred_answers, gold_answers = [], []
+        pred_answers, ref_answers = [], []
         total_loss, total_num = 0, 0
         for b_itx, batch in enumerate(eval_batches):
             feed_dict = {self.p: batch['passage_token_ids'],
@@ -313,7 +313,7 @@ class RCModel(object):
                                          'entities': [[]],
                                          'yesno_answers': []})
                 if 'answers' in sample:
-                    gold_answers.append({'query_id': sample['query_id'],
+                    ref_answers.append({'query_id': sample['query_id'],
                                          'query_type': sample['query_type'],
                                          'answers': sample['answers'],
                                          'entities': [[]],
@@ -329,9 +329,11 @@ class RCModel(object):
 
         # this average loss is invalid on test set, since we don't have true start_id and end_id
         ave_loss = 1.0 * total_loss / total_num
-        # compute the bleu and rouge scores if gold answers is provided
-        if len(gold_answers) > 0:
-            bleu_rouge = compute_bleu_rouge(pred_answers, gold_answers)
+        # compute the bleu and rouge scores if reference answers is provided
+        if len(ref_answers) > 0:
+            pred_dict = {pred['query_id']: pred['answers'] for pred in pred_answers}
+            ref_dict = {ref['query_id']: ref['answers'] for ref in ref_answers}
+            bleu_rouge = compute_bleu_rouge(pred_answers, ref_answers)
         else:
             bleu_rouge = None
         return ave_loss, bleu_rouge
