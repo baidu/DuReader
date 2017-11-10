@@ -189,7 +189,7 @@ def predict(args):
     with open(os.path.join(args.vocab_dir, args.task + '.' + 'vocab.data'), 'rb') as fin:
         vocab = pickle.load(fin)
     brc_data = BRCDataset(args.brc_dir, args.task,
-                          args.max_p_num, args.max_p_len, args.max_q_len, train=False)
+                          args.max_p_num, args.max_p_len, args.max_q_len, train=False, dev=False)
     logger.info('Converting text into ids...')
     brc_data.convert_to_ids(vocab)
     logger.info('Restoring the model...')

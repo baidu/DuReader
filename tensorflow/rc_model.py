@@ -31,6 +31,7 @@ import json
 import numpy as np
 import tensorflow as tf
 from utils import compute_bleu_rouge
+from utils import normalize
 from layers.basic_rnn import rnn
 from layers.match_layer import MatchLSTMLayer
 from layers.match_layer import AttentionFlowMatchLayer
@@ -335,8 +336,8 @@ class RCModel(object):
             for pred, ref in zip(pred_answers, ref_answers):
                 query_id = ref['query_id']
                 if len(ref['answers']) > 0:
-                    pred_dict[query_id] = pred['answers']
-                    ref_dict[query_id] = ref['answers']
+                    pred_dict[query_id] = normalize(pred['answers'])
+                    ref_dict[query_id] = normalize(ref['answers'])
             bleu_rouge = compute_bleu_rouge(pred_dict, ref_dict)
         else:
             bleu_rouge = None
