@@ -81,7 +81,7 @@ Before training the model, we have to make sure that the data is ready. For prep
 ```
 python run.py --prepare --task zhidao
 ```
-You can choose which dataset to use by set the `--task` as `[search|zhidao|both}`.
+You can choose which dataset to use by set the `--task` as `search`, `zhidao` or `both`.
 
 #### Training
 To train the reading comprehension model, you can specify the model type by using `--algo [BIDAF|MLSTM]` and you can also set the hyper-parameters such as the learning rate by using `--learning_rate NUM`. For example, to train a BIDAF model on Zhidao Dataset for 10 epochs, you can run:
