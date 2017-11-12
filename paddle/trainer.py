@@ -16,16 +16,12 @@
 # ==============================================================================
 """
 This module prepares and runs a training process.
-
-Authors: liuyuan(liuyuan04@baidu.com)
-Date: 2017/09/20 12:00:00
 """
 
 
 import argparse
 import numpy as np
 import logging
-import itertools
 
 import gzip
 
@@ -54,7 +50,7 @@ class Trainer(object):
         self.test_reader = datasets[1]
         self.feeding = datasets[0].feeding
         self.costs = []
-        self.__prepare()
+        self._prepare()
 
     def save_model(self, event):
         """
@@ -118,7 +114,7 @@ class Trainer(object):
                 self.parameters.get(p).std(),
                 ))
 
-    def __event_handler(self, event):
+    def _event_handler(self, event):
         if isinstance(event, paddle.event.EndIteration):
             self.costs.append(event.cost)
             if event.batch_id and self.args.saving_period \
@@ -155,7 +151,7 @@ class Trainer(object):
                 event.metrics))
             self.costs = []
 
-    def __prepare(self):
+    def _prepare(self):
         # prepare reader
         self.train_reader = paddle.batch(
                             reader=self.train_reader.create_reader(),
@@ -168,7 +164,6 @@ class Trainer(object):
         paddle.init(use_gpu=self.args.use_gpu,
                     trainer_count=self.args.trainer_count)
 
-        l2_rate = self.args.l2 * self.args.batch_size
         # create optimizer
         optimizer = paddle.optimizer.RMSProp(
                     learning_rate=self.args.learning_rate,
@@ -176,9 +171,6 @@ class Trainer(object):
 
         # create parameters and trainer
         model_out = self.model()
-        if isinstance(model_out, tuple):
-            self.logger.info('multi model out')
-            model_out, prob, label = model_out
         if self.args.init_from:
             self.parameters = paddle.parameters.Parameters.from_tar(
                               gzip.open(self.args.init_from, 'r'))
@@ -196,12 +188,12 @@ class Trainer(object):
                                           parameters=self.parameters,
                                           update_equation=optimizer)
 
-    def run(self):
+    def start(self):
         """
         Runs the whole training process.
         """
         self.logger.info("start training...")
         self.trainer.train(reader=self.train_reader,
-                           event_handler=self.__event_handler,
+                           event_handler=self._event_handler,
                            num_passes=self.args.num_passes,
                            feeding=self.feeding)

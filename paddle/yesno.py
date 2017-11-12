@@ -16,14 +16,13 @@
 # ==============================================================================
 """
 This module implements an opinion classification model to classify a
-query answer pair into 4 categories: None(no opinion), Yes(positive opinion),
+question answer pair into 4 categories: None(no opinion), Yes(positive opinion),
 No(negative opinion), Depends(depends on conditions).
 
 Authors: liuyuan(liuyuan04@baidu.com)
 Date: 2017/09/20 12:00:00
 """
 
-import hashlib
 import logging
 import json
 import sys
@@ -128,15 +127,15 @@ class OpinionClassifier(MatchLstm):
         loss = layer.cross_entropy_cost(input=cls,
                 label=self.label,
                 name=self.name + '_cost')
-        evaluator = paddle.evaluator.precision_recall(
+        evaluator_0 = paddle.evaluator.precision_recall(
                 input=cls, name='label0', label=self.label, positive_label=0)
-        evaluator = paddle.evaluator.precision_recall(
+        evaluator_1 = paddle.evaluator.precision_recall(
                 input=cls, name='label1', label=self.label, positive_label=1)
-        evaluator = paddle.evaluator.precision_recall(
+        evaluator_2 = paddle.evaluator.precision_recall(
                 input=cls, name='label2', label=self.label, positive_label=2)
-        evaluator = paddle.evaluator.precision_recall(
+        evaluator_3 = paddle.evaluator.precision_recall(
                 input=cls, name='label3', label=self.label, positive_label=3)
-        evaluator = paddle.evaluator.precision_recall(
+        evaluator_all = paddle.evaluator.precision_recall(
                 input=cls, name='label_all', label=self.label)
         return loss
 
@@ -154,15 +153,15 @@ class OpinionClassifier(MatchLstm):
         """
         Processes and evaluates the inferred result of one batch.
         """
-        results, stored_objs = self.__parse_infer_ret(ret)
+        results, stored_objs = self._parse_infer_ret(ret)
         with open(infer_file, 'w') as inf:
             for obj in stored_objs:
                 sorted_ans = sorted(obj['yesno_answers'], key=lambda x: x[0])
                 obj['yesno_answers'] = [x[1] for x in sorted_ans]
                 print >> inf, json.dumps(obj, ensure_ascii=False).encode('utf8')
-        self.__calc_pr(results)
+        self._calc_pr(results)
 
-    def __parse_infer_ret(self, infer_ret):
+    def _parse_infer_ret(self, infer_ret):
         results = []
         stored_objs = []
         if not infer_ret:
@@ -173,21 +172,14 @@ class OpinionClassifier(MatchLstm):
                 obj = ins[-1]
                 obj['yesno_answers'] = [(obj['answer_idx'], self.labels[pred])]
                 stored_objs.append(obj)
-        return results, self.__merge_objs(stored_objs)
+        return results, self._merge_objs(stored_objs)
 
-    def __getid(self, query):
-        if isinstance(query, unicode):
-            query = query.encode('utf8')
-        m = hashlib.md5()
-        m.update(query)
-        return m.hexdigest()
-
-    def __merge_objs(self, obj_list):
+    def _merge_objs(self, obj_list):
         merged_objs = []
         last_id = None
 
         for obj in obj_list:
-            qid = obj['query_id']
+            qid = obj['question_id']
             if last_id != qid:
                 merged_objs.append(obj)
                 last_id = qid
@@ -196,7 +188,7 @@ class OpinionClassifier(MatchLstm):
 
         return merged_objs
 
-    def __calc_pr(self, results):
+    def _calc_pr(self, results):
         # {label: [true, pred, real]}
         labels = {}
         if len(results) > 0:

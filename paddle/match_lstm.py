@@ -17,21 +17,17 @@
 """
 This module implements the match-lstm algorithm described in
 https://arxiv.org/abs/1608.07905
-
-Authors: liuyuan(liuyuan04@baidu.com)
-Date: 2017/09/20 12:00:00
 """
 
-from paddle.trainer.config_parser import default_initial_std
 import paddle.v2.layer as layer
 import paddle.v2.attr as Attr
 import paddle.v2.activation as Act
 import paddle.v2 as paddle
 
-from qa_model import QAModel
+from rc_model import RCModel
 
 
-class MatchLstm(QAModel):
+class MatchLstm(RCModel):
     """
     Implements Match-LSTM.
     """
@@ -56,7 +52,7 @@ class MatchLstm(QAModel):
         enc_dropped = self.drop_out(enc, drop_rate=0.5)
         return enc_dropped
 
-    def __attention(self, direct, cur_token, prev, to_apply, to_apply_proj):
+    def _attention(self, direct, cur_token, prev, to_apply, to_apply_proj):
         with layer.mixed(size=cur_token.size,
                          bias_attr=Attr.Param(direct + '.bp',
                              initial_std=0.),
@@ -84,7 +80,7 @@ class MatchLstm(QAModel):
                                 pooling_type=paddle.pooling.Sum())
         return applied
 
-    def __step(self, name, h_q_all, q_proj, h_p_cur):
+    def _step(self, name, h_q_all, q_proj, h_p_cur):
         """
         Match-LSTM step. This function performs operations done in one
         time step.
@@ -103,8 +99,8 @@ class MatchLstm(QAModel):
         h_r_prev = paddle.layer.memory(name=name + '_out_',
                                        size=h_q_all.size,
                                        boot_layer=None)
-        q_expr = self.__attention(direct, h_p_cur, h_r_prev, h_q_all, q_proj)
-        z_cur = self.__fusion_layer(h_p_cur, q_expr)
+        q_expr = self._attention(direct, h_p_cur, h_r_prev, h_q_all, q_proj)
+        z_cur = self.fusion_layer(h_p_cur, q_expr)
 
         with layer.mixed(size=h_q_all.size * 4,
                          act=Act.Tanh(),
@@ -122,24 +118,9 @@ class MatchLstm(QAModel):
                        initial_std=0.),
                    lstm_bias_attr=Attr.Param('step_lstm_%s.bias' % direct,
                        initial_std=0.),
-                   #input=match_input,
                    input=match_input,
                    size=h_q_all.size)
         return step_out
-
-    def __fusion_layer(self, input1, input2):
-        # fusion layer
-        neg_input2 = layer.slope_intercept(input=input2,
-                slope=-1.0,
-                intercept=0.0)
-        diff1 = layer.addto(input=[input1, neg_input2],
-                act=Act.Identity(),
-                bias_attr=False)
-        diff2 = layer.mixed(bias_attr=False,
-                input=layer.dotmul_operator(a=input1, b=input2))
-
-        fused = layer.concat(input=[input1, input2, diff1, diff2])
-        return fused
 
     def recurrent_group(self, name, inputs, reverse=False):
         """
@@ -147,7 +128,7 @@ class MatchLstm(QAModel):
 
         Args:
             name: the name prefix of the layers created by this method.
-            inputs: the inputs takes by the __step method.
+            inputs: the inputs takes by the _step method.
             reverse: True if the paragraph encoding is processed from right
                      to left, otherwise the paragraph encoding is processed
                      from left to right.
@@ -157,7 +138,7 @@ class MatchLstm(QAModel):
         inputs.insert(0, name)
         seq_out = layer.recurrent_group(name=name,
                                         input=inputs,
-                                        step=self.__step,
+                                        step=self._step,
                                         reverse=reverse)
         return seq_out
 
@@ -173,8 +154,6 @@ class MatchLstm(QAModel):
         self.create_shared_params()
         q_enc = self.get_enc(self.q_ids, type='q')
         p_encs = []
-        p_matches_start = []
-        p_matches_end = []
         p_matches = []
         for p in self.p_ids:
             p_encs.append(self.get_enc(p, type='p'))
@@ -214,7 +193,6 @@ class MatchLstm(QAModel):
                         initial_std=0.),
                     bwd_inner_param_attr=Attr.Param('pn_b_enc_inn.w'),
                     return_seq=True)
-            #bi_match_seq_drop = self.drop_out(bi_match_seq, drop_rate=0.5)
             p_matches.append(bi_match_seq)
 
         all_docs = reduce(lambda x, y: layer.seq_concat(a=x, b=y),
@@ -223,15 +201,3 @@ class MatchLstm(QAModel):
         start = self.decode('start', all_docs_dropped)
         end = self.decode('end', all_docs_dropped)
         return start, end
-
-    def decode_with_context(self, name, match_seq, attention):
-        """
-        Decode with context information.
-        """
-        scaled = layer.scaling(input=match_seq, weight=attention)
-        context = layer.pooling(input=scaled,
-                pooling_type=paddle.pooling.Sum())
-        expanded = layer.expand(input=context, expand_as=match_seq)
-        match_seq_new = self.__fusion_layer(match_seq, expanded)
-        probs = self.decode(name, match_seq_new)
-        return probs

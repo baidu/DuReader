@@ -51,7 +51,7 @@ vocab_size=218967
 
 train() {
     cp *.py $env_dir/
-    PYTHONPATH=$PWD:$ROOT CUDA_VISIBLE_DEVICES=0,1 python $env_dir/run.py \
+    PYTHONPATH=$PWD:$ROOT CUDA_VISIBLE_DEVICES=0 python $env_dir/run.py \
         --trainset ../data/preprocessed/search.train.json \
         --testset ../data/preprocessed/search.dev.json \
         --vocab_file ../data/vocab.search \
@@ -70,7 +70,7 @@ train() {
 
 infer() {
     model_name=`basename $2`
-    PYTHONPATH=$PWD:$ROOT CUDA_VISIBLE_DEVICES=3 python $env_dir/run.py \
+    PYTHONPATH=$PWD:$ROOT CUDA_VISIBLE_DEVICES=0 python $env_dir/run.py \
         --vocab_file ../data/vocab.search \
         --emb_dim $emb_dim \
         --batch_size 32 \

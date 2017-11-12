@@ -16,9 +16,6 @@
 # ==============================================================================
 """
 This module computes evaluation metrics for DuReader dataset.
-
-Authors: liuyuan(liuyuan04@baidu.com)
-Date: 2017/10/26 12:00:00
 """
 
 
@@ -28,7 +25,7 @@ import os
 import sys
 import random
 from brc_eval import compute_metrics_from_list
-from find_answer import find_best_query_match
+from find_answer import find_best_question_match
 
 EMPTY = ''
 YESNO_LABELS = {
@@ -38,21 +35,21 @@ YESNO_LABELS = {
         'Depends': 3}
 
 
-def getid(query):
+def getid(question):
     """
     compute id.
     """
     m = hashlib.md5()
-    m.update(query.encode('utf8'))
+    m.update(question.encode('utf8'))
     return m.hexdigest()
 
 
 def build_yesno_subtype_golden(obj, subtype):
     """
-    Get golden reference of query_id.
+    Get golden reference of question_id.
     """
     ret_list = []
-    if obj['query_type'] != 'YES_NO':
+    if obj['question_type'] != 'YES_NO':
         return ret_list
 
     if subtype != 0:
@@ -63,7 +60,7 @@ def build_yesno_subtype_golden(obj, subtype):
     yesno_answers = obj['yesno_answers']
     assert len(answers) == len(yesno_answers), \
             "num_answers != num_yesno_answers"
-    qid = getid(obj['query'])
+    qid = getid(obj['question'])
     for ans, lbl in zip(answers, yesno_answers):
         key = qid + '_' + lbl
         result = {}
@@ -85,7 +82,7 @@ def build_yesno_subtype_human(obj, subtype):
     Get human result.
     """
     ret_list = []
-    if obj['query_type'] != 'YES_NO':
+    if obj['question_type'] != 'YES_NO':
         return ret_list
     if subtype != 0:
         if obj['yesno_type'] != subtype:
@@ -93,7 +90,7 @@ def build_yesno_subtype_human(obj, subtype):
 
     answers = obj['answers_by_annotator_2']
     labels = obj['yesno_answers_by_annotator_2']
-    qid = getid(obj['query'])
+    qid = getid(obj['question'])
     for ans, lbl in zip(answers, labels):
         key = qid + '_' + lbl
         result = {}
@@ -123,7 +120,7 @@ def build_yesno_subtype_ctrl(obj, subtype):
     Get control experiment result.
     """
     ret_list = []
-    if obj['query_type'] != 'YES_NO':
+    if obj['question_type'] != 'YES_NO':
         return ret_list
     if subtype != 0:
         if obj['yesno_type'] != subtype:
@@ -132,7 +129,7 @@ def build_yesno_subtype_ctrl(obj, subtype):
     answers = obj['pred_answers']
     labels = YESNO_LABELS.keys()
     answers_exp = answers * len(labels)
-    qid = getid(obj['query'])
+    qid = getid(obj['question'])
     for ans, lbl in zip(answers_exp, labels):
         result = {}
         key = qid + '_' + lbl
@@ -148,13 +145,13 @@ def build_yesno_random(obj):
     Get results of random model.
     """
     ret_list = []
-    if obj['query_type'] != 'YES_NO':
+    if obj['question_type'] != 'YES_NO':
         return ret_list
 
     reverse_dict = {v: k for k, v in YESNO_LABELS.items()}
     answers = obj['pred_answers']
     labels = [random.choice(YESNO_LABELS.keys())]
-    qid = getid(obj['query'])
+    qid = getid(obj['question'])
     for ans, lbl in zip(answers, labels):
         key = qid + '_' + lbl
         result = {key: [ans]}
@@ -173,7 +170,7 @@ def build_yesno_subtype_exp(obj, subtype):
     Get results of experiment.
     """
     ret_list = []
-    if obj['query_type'] != 'YES_NO':
+    if obj['question_type'] != 'YES_NO':
         return ret_list
 
     if subtype != 0:
@@ -186,7 +183,7 @@ def build_yesno_subtype_exp(obj, subtype):
             x[1]
             for x in sorted(obj['yesno_answers_pred'], key=lambda x: x[0])]
     labels = [reverse_dict[i] for i in labels_raw]
-    qid = getid(obj['query'])
+    qid = getid(obj['question'])
     for ans, lbl in zip(answers, labels):
         key = qid + '_' + lbl
         result = {key: [ans]}
@@ -210,17 +207,17 @@ def build_yesno_subtype_exp(obj, subtype):
 def build_yesno_selected(obj):
     """
     A control exp on selected passage, which is selected according to
-    recall of query tokens.
+    recall of question tokens.
     """
     ret_list = []
-    if obj['query_type'] != 'YES_NO':
+    if obj['question_type'] != 'YES_NO':
         return ret_list
 
     docs = obj['documents']
     selected_paras = []
     for d in docs:
-        most_related_id, score = find_best_query_match(d,
-                obj['segmented_query'],
+        most_related_id, score = find_best_question_match(d,
+                obj['segmented_question'],
                 with_score=True)
         selected_paras.append(
                 (d['segmented_paragraphs'][most_related_id], score))
@@ -229,7 +226,7 @@ def build_yesno_selected(obj):
             sorted(selected_paras, key=lambda x: x[1], reverse=True)[0][0])
     labels = YESNO_LABELS.keys()
     answers = [answer] * len(labels)
-    qid = getid(obj['query'])
+    qid = getid(obj['question'])
     for ans, lbl in zip(answers, labels):
         ret_list.append({qid + '_' + lbl: [ans]})
 
@@ -241,10 +238,10 @@ def build_normal(obj):
     Normal answer result.
     """
     ret_list = []
-    if obj['query_type'] == 'YES_NO':
+    if obj['question_type'] == 'YES_NO':
         return build_yesno_subtype_exp(obj, 0)
     answers = obj['pred_answers'][:1]
-    qid = getid(obj['query'])
+    qid = getid(obj['question'])
     result = {qid: answers}
     ret_list.append(result)
     return ret_list
@@ -255,10 +252,10 @@ def build_normal_golden(obj):
     build normal golden
     """
     ret_list = []
-    if obj['query_type'] == 'YES_NO':
+    if obj['question_type'] == 'YES_NO':
         return build_yesno_subtype_golden(obj, 0)
     answers = obj['answers']
-    qid = getid(obj['query'])
+    qid = getid(obj['question'])
     result = {qid: answers}
     ret_list.append(result)
     return ret_list
@@ -269,13 +266,13 @@ def build_normal_human(obj):
     build normal human results.
     """
     ret_list = []
-    if obj['query_type'] == 'YES_NO':
+    if obj['question_type'] == 'YES_NO':
         return build_yesno_subtype_human(obj, 0)
 
     answer = obj['answers_by_annotator_2'][0] \
             if len(obj['answers_by_annotator_2']) > 0 \
             else EMPTY
-    qid = getid(obj['query'])
+    qid = getid(obj['question'])
     ret_list.append({qid: [answer]})
     return ret_list
 
@@ -284,7 +281,7 @@ def build_normal_human_golden(obj):
     """
     build golden results for human normal.
     """
-    if obj['query_type'] == 'YES_NO':
+    if obj['question_type'] == 'YES_NO':
         return build_yesno_subtype_golden(obj, 0)
     return build_normal_golden(obj)
 
@@ -311,8 +308,8 @@ def merge_dict(li_pred, li_ref):
                 or (ref_dict[qid] == [EMPTY] and pred_dict[qid] == [EMPTY]):
             continue
         assert len(pred_dict[qid]) <= 1, 'qid: {}'.format(qid)
-        obj_pred = {'query': qid, 'answer': pred_dict[qid]}
-        obj_ref = {'query': qid, 'answer': ref_dict[qid]}
+        obj_pred = {'question': qid, 'answer': pred_dict[qid]}
+        obj_ref = {'question': qid, 'answer': ref_dict[qid]}
 
         pred_list.append(obj_pred)
         ref_list.append(obj_ref)

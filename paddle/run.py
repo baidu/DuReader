@@ -16,9 +16,6 @@
 # ==============================================================================
 """
 Prepares and runs the whole system.
-
-Authors: liuyuan(liuyuan04@baidu.com)
-Date: 2017/09/20 12:00:00
 """
 
 import argparse
@@ -58,11 +55,11 @@ class Env(object):
             logger.info("infer mode")
         else:
             logger.info("train mode")
-        self.__prepare()
+        self._prepare()
 
-    def __prepare(self):
+    def _prepare(self):
         if self.args.algo == Algos.BIDAF:
-            self.__create_qa_data()
+            self._create_qa_data()
             self.model = BiDAF(
                          Algos.BIDAF,
                          self.datasets[1].schema,
@@ -70,9 +67,10 @@ class Env(object):
                          vocab_size=self.args.vocab_size,
                          doc_num=self.datasets[1].doc_num,
                          static_emb=(self.args.pre_emb.strip() != ''),
-                         emb_dim=self.args.emb_dim)
+                         emb_dim=self.args.emb_dim,
+                         max_a_len=self.args.max_a_len)
         elif self.args.algo == Algos.MLSTM:
-            self.__create_qa_data()
+            self._create_qa_data()
             self.model = MatchLstm(
                          Algos.MLSTM,
                          self.datasets[1].schema,
@@ -80,9 +78,10 @@ class Env(object):
                          vocab_size=self.args.vocab_size,
                          doc_num=self.datasets[1].doc_num,
                          static_emb=(self.args.pre_emb.strip() != ''),
-                         emb_dim=self.args.emb_dim)
+                         emb_dim=self.args.emb_dim,
+                         max_a_len=self.args.max_a_len)
         elif self.args.algo == Algos.YESNO:
-            self.__create_yesno_data()
+            self._create_yesno_data()
             self.model = OpinionClassifier(
                          Algos.YESNO,
                          self.datasets[1].schema,
@@ -94,7 +93,7 @@ class Env(object):
         else:
             raise ValueError('Illegal algo: {}'.format(self.args.algo))
 
-    def __create_qa_data(self):
+    def _create_qa_data(self):
         if self.args.is_infer:
             train_reader = None
         else:
@@ -115,7 +114,7 @@ class Env(object):
                       preload=(not self.args.is_infer))
         self.datasets = [train_reader, test_reader]
 
-    def __create_yesno_data(self):
+    def _create_yesno_data(self):
         if self.args.is_infer:
             train_reader = None
         else:
@@ -145,8 +144,8 @@ def parse_args():
     parser.add_argument('--test_period', type=int, default=10)
     parser.add_argument('--vocab_file', help='dict')
     parser.add_argument('--batch_size', help='batch size',
-                        default=30, type=int)
-    parser.add_argument('--num_passes', type=int, default=100)
+                        default=32, type=int)
+    parser.add_argument('--num_passes', type=int, default=30)
     parser.add_argument('--emb_dim', help='dim of word vector',
                         default=300, type=int)
     parser.add_argument('--vocab_size', help='vocab size',
@@ -157,15 +156,15 @@ def parse_args():
     parser.add_argument('--trainer_count', type=int, default=1)
     parser.add_argument('--saving_period', type=int, default=100)
     parser.add_argument('--pre_emb', default='')
-    parser.add_argument('--task', default='train')
     parser.add_argument('--algo', default='bidaf', help='bidaf|mlstm|yesno')
     parser.add_argument('--learning_rate', default=1e-3, type=float)
     parser.add_argument('--log_period', default=10, type=int)
-    parser.add_argument('--l2', default=2e-4, type=float)
+    parser.add_argument('--l2', default=0, type=float)
     parser.add_argument('--is_infer', default=False, action='store_true')
     parser.add_argument('--model_file', default='')
     parser.add_argument('--init_from', default='')
-    parser.add_argument('--max_p_len', type=int, default=300)
+    parser.add_argument('--max_p_len', type=int, default=500)
+    parser.add_argument('--max_a_len', type=int, default=200)
 
     args = parser.parse_args()
     return args
@@ -183,7 +182,7 @@ def run():
     worker = Trainer(args, model=model, datasets=datasets) \
              if not args.is_infer else \
              Inferer(args, model=model, datasets=datasets)
-    worker.run()
+    worker.start()
 
 
 if __name__ == '__main__':

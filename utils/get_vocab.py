@@ -29,7 +29,7 @@ from itertools import chain
 def get_vocab(files, vocab_file):
     """
     Builds vocabulary file from field 'segmented_paragraphs'
-    and 'segmented_query'.
+    and 'segmented_question'.
 
     Args:
         files: A list of file names.
@@ -44,8 +44,8 @@ def get_vocab(files, vocab_file):
                         chain(*d['segmented_paragraphs'])
                         for d in obj['documents']]
                 doc_tokens = chain(*paras)
-                query_tokens = obj['segmented_query']
-                for t in list(doc_tokens) + query_tokens:
+                question_tokens = obj['segmented_question']
+                for t in list(doc_tokens) + question_tokens:
                     vocab[t] = vocab.get(t, 0) + 1
     # output
     sorted_vocab = sorted([(v, c) for v, c in vocab.items()],

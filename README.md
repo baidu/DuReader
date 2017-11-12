@@ -12,20 +12,26 @@ DuReader system implements 2 classic reading comprehension models([BiDAF]() and 
 ## How to Run
 ### Download the Dataset
 To Download DuReader dataset:
-```bash
+```
 cd data && bash download.sh
 ```
 For more details about DuReader dataset please refer to [DuReader Homepage]().
 ### Preprocess the Data
 After the dataset is downloaded, there is still some work to do to run the baseline systems. DuReader dataset offers rich amount of documents for every user question, the documents are too long for popular RC models to cope with. In our baseline models, we preprocess the train set and development set data by selecting the paragraph that is most related to the answer string, while for inferring(no available golden answer), we select the paragraph that is most related to the question string. The preprocessing strategy is implemented in `utils/preprocess.py`. To preprocess the raw data, run:
-```bash
+```
 cat data/raw/search.train.json | python utils/preprocess.py > data/preprocessed/search.train.json
 ```
 The preprocessing is already included in `data/download.sh`, the preprocessed data is stored in `data/preprocess`, the downloaded raw data is under `data/raw`.
+
+Once the preprocessed data is ready, you can run `utils/get_vocab.py` to generate the vocabulary file, for example, if you want to train model with Baidu Search data:
+```
+python utils/get_vocab.py --files data/preprocess/search.train.json data/preprocess/search.dev.json  --vocab data/vocab.search
+```
+
 ### Run PaddlePaddle
 #### Environment requirements
 Install the latest PaddlePaddle by:
-```bash
+```
 # CPU
 pip install paddlepaddle
 # GPU
@@ -41,7 +47,7 @@ bash run.sh EXPERIMENT_NAME ALGO_NAME TASK_NAME
 ```
 `EXPERIMENT_NAME` can be any legal folder name,  `ALGO_NAME` should be `bidaf`, `mlstm` or `yesno` for the 3 models have been implemented.
 For example, to train a model with BiDAF, run:
-```bash
+```
 bash run.sh test_bidaf bidaf train
 ```
 `run.sh` creates a folder named `models`, and for every experiment a folder named `EXPERIMENT_NAME` is created under models, the basic experiment folder layout should be like:
@@ -58,8 +64,7 @@ For training, all scripts the experiment uses will first be copied to `env`, and
 #### Inference
 To infer a trained model, run the same command as training and change `train` to `infer`,  and add `--testset <path_to_testset>` argument. for example, suppose the 'test_bidaf' experiment is successfully trained,  to infer the saved models, run:
 ```
-bash run.sh test_bidaf bidaf infer \
-	--testset ../data/preprocessed/search.test.json
+bash run.sh test_bidaf bidaf infer --testset ../data/preprocessed/search.test.json
 ```
 The results corresponding to each model saved is under `infer` folder, and the evaluation metrics is logged into the infer log files under `log`.
 #### Test result submission

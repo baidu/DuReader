@@ -17,9 +17,6 @@
 """
 This module implements the basic common functions of the Match-LSTM and BiDAF
 networks.
-
-Authors: liuyuan(liuyuan04@baidu.com)
-Date: 2017/09/20 12:00:00
 """
 
 import copy
@@ -38,7 +35,7 @@ from utils import normalize
 logger = logging.getLogger("paddle")
 logger.setLevel(logging.INFO)
 
-class QAModel(object):
+class RCModel(object):
     """
     This is the base class of Match-LSTM and BiDAF models.
     """
@@ -50,6 +47,7 @@ class QAModel(object):
         self.is_infer = kwargs['is_infer']
         self.doc_num = kwargs['doc_num']
         self.static_emb = kwargs['static_emb']
+        self.max_a_len = kwargs['max_a_len']
 
     def check_and_create_data(self):
         """
@@ -205,12 +203,11 @@ class QAModel(object):
                 act=Act.SequenceSoftmax())
         return probs
 
-    def __search_boundry(self, start_probs, end_probs):
-        max_answer_len = 200
+    def _search_boundry(self, start_probs, end_probs):
         assert len(start_probs) == len(end_probs)
         boundries = []
         for start_idx, start_prob in enumerate(start_probs):
-            max_idx = min(start_idx + max_answer_len + 1, len(end_probs))
+            max_idx = min(start_idx + self.max_a_len + 1, len(end_probs))
             for end_idx in range(start_idx, max_idx):
                 end_prob = end_probs[end_idx]
                 boundries.append(
@@ -218,7 +215,7 @@ class QAModel(object):
         max_boundry = sorted(boundries, key=lambda x: x[1], reverse=True)[0][0]
         return max_boundry
 
-    def __parse_infer_ret(self, infer_ret):
+    def _parse_infer_ret(self, infer_ret):
         pred_list = []
         ref_list = []
         objs = []
@@ -236,18 +233,18 @@ class QAModel(object):
                 prob_len = int(sum(len_slice))
                 start_prob_slice = probs[idx_prob:idx_prob + prob_len]
                 end_prob_slice = probs[idx_prob + prob_len:idx_prob + 2 * prob_len]
-                start_idx, end_idx = self.__search_boundry(start_prob_slice,
+                start_idx, end_idx = self._search_boundry(start_prob_slice,
                         end_prob_slice)
                 pred_tokens = [] if start_idx > end_idx \
                         else ins['tokens'][start_idx:end_idx + 1]
 
                 pred = [' '.join(pred_tokens)]
-                ref = ins['answers_ref']
+                ref = [' '.join(s) for s in ins['answers_ref']]
 
                 idx_len += self.doc_num
                 idx_prob += prob_len * 2
-                pred_obj = {ins['query_id']: pred}
-                ref_obj = {ins['query_id']: ref}
+                pred_obj = {ins['question_id']: pred}
+                ref_obj = {ins['question_id']: ref}
                 stored_obj = copy.deepcopy(ins)
                 stored_obj['answers'] = pred
                 objs.append(stored_obj)
@@ -256,14 +253,14 @@ class QAModel(object):
                 ins_cnt += 1
         return ref_list, pred_list, objs
 
-    def __read_list(self, infer_file):
+    def _read_list(self, infer_file):
         ref_list = []
         pred_list = []
         with open(infer_file, 'r') as inf:
             for line in inf:
                 obj = json.loads(line.strip())
-                ref_obj = {obj['query_id']: obj['answers_ref']}
-                pred_obj = {obj['query_id']: obj['answers']}
+                ref_obj = {obj['question_id']: obj['answers_ref']}
+                pred_obj = {obj['question_id']: obj['answers']}
                 ref_list.append(ref_obj)
                 pred_list.append(pred_obj)
         return ref_list, pred_list
@@ -286,6 +283,24 @@ class QAModel(object):
             dropped += layer.identity_projection(input)
         return dropped
 
+    def fusion_layer(self, input1, input2):
+        """
+        Combine input1 and input2 by concat(input1 .* input2, input1 - input2,
+        input1, input2)
+        """
+        # fusion layer
+        neg_input2 = layer.slope_intercept(input=input2,
+                slope=-1.0,
+                intercept=0.0)
+        diff1 = layer.addto(input=[input1, neg_input2],
+                act=Act.Identity(),
+                bias_attr=False)
+        diff2 = layer.mixed(bias_attr=False,
+                input=layer.dotmul_operator(a=input1, b=input2))
+
+        fused = layer.concat(input=[input1, input2, diff1, diff2])
+        return fused
+
     def evaluate(self,
             infer_file,
             ret=None,
@@ -304,7 +319,7 @@ class QAModel(object):
                        the ret as input for evaluation.
 
         """
-        def __merge_and_normalize(obj_list):
+        def _merge_and_normalize(obj_list):
             ret = {}
             for obj in obj_list:
                 normalized = {k: normalize(v) for k, v in obj.items()}
@@ -316,15 +331,15 @@ class QAModel(object):
         objs = []
 
         if from_file:
-            ref_list, pred_list = self.__read_list(infer_file)
+            ref_list, pred_list = self._read_list(infer_file)
         else:
-            ref_list, pred_list, objs = self.__parse_infer_ret(ret)
+            ref_list, pred_list, objs = self._parse_infer_ret(ret)
             with open(infer_file, 'w') as of:
                 for o in objs:
                     print >> of, json.dumps(o, ensure_ascii=False).encode('utf8')
         metrics = compute_bleu_rouge(
-                __merge_and_normalize(pred_list),
-                __merge_and_normalize(ref_list))
+                _merge_and_normalize(pred_list),
+                _merge_and_normalize(ref_list))
         res_str = '{} {}'.format(infer_file,
                 ' '.join('{}={}'.format(k, v) for k, v in metrics.items()))
         logger.info(res_str)

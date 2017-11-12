@@ -16,23 +16,18 @@
 # ==============================================================================
 """
 Implements data parsers for different tasks on DuReader dataset.
-
-Authors: liuyuan(liuyuan04@baidu.com)
-Data: 2017/09/20 12:00:00
 """
 
 import copy
-import hashlib
 import itertools
 import logging
 import json
 import numpy as np
 import random
 import sys
-from collections import OrderedDict
 import paddle.v2 as paddle
 
-from utils import find_best_query_match
+from utils import find_best_question_match
 
 logger = logging.getLogger("paddle")
 logger.setLevel(logging.INFO)
@@ -168,7 +163,7 @@ class DuReaderYesNo(Dataset):
         if self.is_infer:
             assert self.shuffle == False, 'Shuffling is forbidden for inference'
 
-    def __get_id(self, s):
+    def _get_id(self, s):
         s_ids = []
         if not isinstance(s, list):
             s = s.split(' ')
@@ -189,18 +184,18 @@ class DuReaderYesNo(Dataset):
 
         obj = json.loads(line.strip())
         ret = []
-        if obj['query_type'] != 'YES_NO':
+        if obj['question_type'] != 'YES_NO':
             return ret
         label_ids = [self.labels[l] for l in obj['yesno_answers']]
-        query = [
+        question = [
                 self.vocab.get(x, self.unk_id)
-                for x in obj['segmented_query']]
-        paras = map(self.__get_id, obj['segmented_answers'])
+                for x in obj['segmented_question']]
+        paras = map(self._get_id, obj['segmented_answers'])
 
-        if not query or not paras:
+        if not question or not paras:
             return ret
         for para, lbl in zip(paras, label_ids):
-            ret.append((query, para, lbl))
+            ret.append((question, para, lbl))
         return ret
 
     def parse_infer(self, line):
@@ -215,15 +210,15 @@ class DuReaderYesNo(Dataset):
         """
         obj = json.loads(line.strip())
         ret = []
-        paras = map(self.__get_id, obj['answers'])
-        query = [self.vocab.get(x, self.unk_id) for x in obj['query']]
+        paras = map(self._get_id, obj['answers'])
+        question = [self.vocab.get(x, self.unk_id) for x in obj['question']]
         fake_label = 0
         for idx, para in enumerate(paras):
             info = copy.deepcopy(obj)
             info['answer_idx'] = idx
             info['yesno_answers_ref'] = info['yesno_answers_ref']
             info['yesno_answers'] = []
-            ret.append((query, para, fake_label, info))
+            ret.append((question, para, fake_label, info))
         return ret
 
     def parse(self, line):
@@ -260,7 +255,7 @@ class DuReaderQA(Dataset):
 
         self.feeding = {name: i for i, name in enumerate(self.schema)}
 
-    def __find_ans_span(self, query_tokens, span, answer_docs, docs):
+    def _find_ans_span(self, question_tokens, span, answer_docs, docs):
         assert len(span) == 1, 'Multiple spans: {}'.format(span)
         assert len(answer_docs) == 1, \
                 'Multiple answer docs: {}'.format(answer_docs)
@@ -271,7 +266,7 @@ class DuReaderQA(Dataset):
             if not self.is_infer:
                 para_idx = doc['most_related_para']
             else:
-                para_idx = find_best_query_match(doc, query_tokens)
+                para_idx = find_best_question_match(doc, question_tokens)
             para = doc['segmented_paragraphs'][para_idx]
             if len(para) == 0:
                 continue
@@ -291,8 +286,8 @@ class DuReaderQA(Dataset):
             para_tokens.append(para)
         return selected_paras, para_tokens
 
-    def __make_sample(self, query_ids, para_infos):
-        def __get_label(idx, ref):
+    def _make_sample(self, question_ids, para_infos):
+        def _get_label(idx, ref):
             ret = [0.0] * len(ref)
             if idx > 0:
                 ret[idx] = 1.0
@@ -305,23 +300,23 @@ class DuReaderQA(Dataset):
             selected += [default_para_info] * (self.doc_num - len(selected))
         for para_ids, ans_span in selected:
             s, e = ans_span
-            start_label = __get_label(s, para_ids)
-            end_label = __get_label(e, para_ids)
+            start_label = _get_label(s, para_ids)
+            end_label = _get_label(e, para_ids)
             paras.append(para_ids)
             start_labels.append(start_label)
             end_labels.append(end_label)
             para_lens.append([[len(para_ids)]])
-        sample = [query_ids] + paras + para_lens + start_labels + end_labels
+        sample = [question_ids] + paras + para_lens + start_labels + end_labels
         return sample
 
-    def __get_infer_info(self, obj, paras):
+    def _get_infer_info(self, obj, paras):
         info = {}
         info['tokens'] = list(itertools.chain(*paras))
         info['answers'] = []
         info['answers_ref'] = obj.get('segmented_answers', [])
-        info['query'] = obj['segmented_query']
-        info['query_id'] = obj['query_id']
-        info['query_type'] = obj['query_type']
+        info['question'] = obj['segmented_question']
+        info['question_id'] = obj['question_id']
+        info['question_type'] = obj['question_type']
         info['yesno_answers_ref'] = obj.get('yesno_answers', [])
         info['yesno_answers'] = []
         info['entities'] = obj.get('entity_answers', [[]])
@@ -345,20 +340,19 @@ class DuReaderQA(Dataset):
         if obj['answer_docs'][0] > 5:
             logger.info('skip, answer doc out of range.')
             return ret
-        q_ids = [self.vocab.get(x, self.unk_id) for x in obj['segmented_query']]
+        q_ids = [self.vocab.get(x, self.unk_id) for x in obj['segmented_question']]
         if len(q_ids) == 0:
             return ret
-        selected_paras, para_tokens = self.__find_ans_span(
-                obj['segmented_query'],
+        selected_paras, para_tokens = self._find_ans_span(
+                obj['segmented_question'],
                 obj['answer_spans'],
                 obj['answer_docs'],
                 obj['documents'])
         if not selected_paras:
             return ret
-        sample = self.__make_sample(q_ids, selected_paras)
-        #assert len(sample) == len(self.schema)
+        sample = self._make_sample(q_ids, selected_paras)
         if self.is_infer:
-            sample.append(self.__get_infer_info(obj, para_tokens))
+            sample.append(self._get_infer_info(obj, para_tokens))
         ret.append(sample)
         return ret
 

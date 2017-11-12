@@ -16,9 +16,6 @@
 # ==============================================================================
 """
 This module computes evaluation metrics for DuReader dataset.
-
-Authors: liuyuan(liuyuan04@baidu.com), wangyizhong(wangyizhong01@baidu.com)
-Date: 2017/10/26 12:00:00
 """
 
 
@@ -54,32 +51,34 @@ def normalize(s):
     return normalized
 
 
-def data_check(obj):
+def data_check(obj, task):
     """
     Check data.
 
     Raises:
         Raises AssertionError when data is not legal.
     """
-    assert 'query_id' in obj, "Missing 'query_id' field."
-    assert 'yesno_answers' in obj, \
-            "Missing 'yesno_answers' field. query_id: {}".format(obj['query_id'])
-    assert 'entities' in obj, \
-            "Missing 'entities' field. query_id: {}".format(obj['query_id'])
-    assert 'query_type' in obj, \
-            "Missing 'query_type' field. query_id: {}".format(obj['query_type'])
+    assert 'question_id' in obj, "Missing 'question_id' field."
+    assert 'question_type' in obj, \
+            "Missing 'question_type' field. question_id: {}".format(obj['question_type'])
 
+    #if task == 'yesno' and obj['question_type'] == 'YES_NO':
+    assert 'yesno_answers' in obj, \
+            "Missing 'yesno_answers' field. question_id: {}".format(obj['question_id'])
+    assert isinstance(obj['yesno_answers'], list), \
+            r"""'yesno_answers' field must be a list, if the 'question_type' is not
+            'YES_NO', then this field should be an empty list.
+            question_id: {}""".format(obj['question_id'])
+
+    #if task == 'entity' and obj['question_type'] == 'ENTITY':
+    assert 'entities' in obj, \
+            "Missing 'entities' field. question_id: {}".format(obj['question_id'])
     assert isinstance(obj['entities'], list) and len(obj['entities']) > 0, \
             r"""'entities' field must be a list, and has at least one element,
-            which can be a empty list. query_id: {}""".format(obj['query_id'])
-
-    assert isinstance(obj['yesno_answers'], list), \
-            r"""'yesno_answers' field must be a list, if the 'query_type' is not
-            'YES_NO', then this field should be an empty list.
-            query_id: {}""".format(obj['query_id'])
+            which can be a empty list. question_id: {}""".format(obj['question_id'])
 
 
-def read_file(file_name, type='predict'):
+def read_file(file_name, task, is_ref=False):
     """
     Read predict answers or reference answers from file.
 
@@ -88,9 +87,9 @@ def read_file(file_name, type='predict'):
                    result.
 
     Returns:
-        A dictionary mapping query_id to the result information. The result
+        A dictionary mapping question_id to the result information. The result
         information itself is also a dictionary with has four keys:
-        - query_type: type of the query.
+        - question_type: type of the question.
         - yesno_answers: A list of yesno answers corresponding to 'answers'.
         - answers: A list of predicted answers.
         - entities: A list, each element is also a list containing the entities
@@ -102,8 +101,8 @@ def read_file(file_name, type='predict'):
         return open(file_name, mode)
 
     results = {}
-    keys = ['answers', 'yesno_answers', 'entities', 'query_type']
-    if type == 'reference':
+    keys = ['answers', 'yesno_answers', 'entities', 'question_type']
+    if is_ref:
         keys += ['source']
 
     zf = zipfile.ZipFile(file_name, 'r') if file_name.endswith('.zip') else None
@@ -115,9 +114,9 @@ def read_file(file_name, type='predict'):
                 obj = json.loads(line.strip())
             except ValueError:
                 raise ValueError("Every line of data should be legal json")
-            data_check(obj)
-            qid = obj['query_id']
-            assert qid not in results, "Duplicate query_id: {}".format(qid)
+            data_check(obj, task)
+            qid = obj['question_id']
+            assert qid not in results, "Duplicate question_id: {}".format(qid)
             results[qid] = {}
             for k in keys:
                 results[qid][k] = obj[k]
@@ -133,9 +132,9 @@ def compute_bleu_rouge(pred_dict, ref_dict, bleu_order=4):
     scores = {}
     bleu_scores, _ = Bleu(bleu_order).compute_score(ref_dict, pred_dict)
     for i, bleu_score in enumerate(bleu_scores):
-        scores['bleu_%d' % (i + 1)] = bleu_score
+        scores['Bleu-%d' % (i + 1)] = bleu_score
     rouge_score, _ = Rouge().compute_score(ref_dict, pred_dict)
-    scores['rouge_l'] = rouge_score
+    scores['Rouge-L'] = rouge_score
     return scores
 
 
@@ -158,15 +157,15 @@ def compute_prf(pred_dict, ref_dict):
     """
     Compute precision recall and f1-score.
     """
-    pred_query_ids = set(pred_dict.keys())
-    ref_query_ids = set(ref_dict.keys())
+    pred_question_ids = set(pred_dict.keys())
+    ref_question_ids = set(ref_dict.keys())
     correct_preds, total_correct, total_preds = 0, 0, 0
-    for query_id in ref_query_ids:
-        pred_entity_list = pred_dict.get(query_id, [[]])
+    for question_id in ref_question_ids:
+        pred_entity_list = pred_dict.get(question_id, [[]])
         assert len(pred_entity_list) == 1, \
-            'the number of entity list for query_id {} is not 1.'.format(query_id)
+            'the number of entity list for question_id {} is not 1.'.format(question_id)
         pred_entity_list = pred_entity_list[0]
-        all_ref_entity_lists = ref_dict[query_id]
+        all_ref_entity_lists = ref_dict[question_id]
         best_local_f1 = 0
         best_ref_entity_list = None
         for ref_entity_list in all_ref_entity_lists:
@@ -188,7 +187,7 @@ def compute_prf(pred_dict, ref_dict):
     p = float(correct_preds) / total_preds if correct_preds > 0 else 0
     r = float(correct_preds) / total_correct if correct_preds > 0 else 0
     f1 = 2 * p * r / (p + r) if correct_preds > 0 else 0
-    return {'precision': p, 'recall': r, 'f1': f1}
+    return {'Precision': p, 'Recall': r, 'F1': f1}
 
 
 def prepare_prf(pred_dict, ref_dict):
@@ -212,17 +211,31 @@ def get_metrics(pred_result, ref_result, task, source):
         ref_result_filtered = ref_result
         pred_result_filtered = pred_result
     else:
-        for query_id, info in ref_result.items():
+        for question_id, info in ref_result.items():
             if info['source'] == source:
-                ref_result_filtered[query_id] = info
-                if query_id in pred_result:
-                    pred_result_filtered[query_id] = pred_result[query_id]
+                ref_result_filtered[question_id] = info
+                if question_id in pred_result:
+                    pred_result_filtered[question_id] = pred_result[question_id]
 
-    if task == 'basic' or task == 'yesno' or task == 'all':
+    if task == 'main' or task == 'all' \
+            or task == 'description':
         pred_dict, ref_dict = prepare_bleu(pred_result_filtered,
                 ref_result_filtered,
                 task)
         metrics = compute_bleu_rouge(pred_dict, ref_dict)
+    elif task == 'yesno':
+        pred_dict, ref_dict = prepare_bleu(pred_result_filtered,
+                ref_result_filtered,
+                task)
+        keys, detail_pred_dicts, detail_ref_dicts = prepare_yesno_detail_bleu(
+                pred_result_filtered,
+                ref_result_filtered)
+        metrics = compute_bleu_rouge(pred_dict, ref_dict)
+        for k, pred, ref in zip(keys, detail_pred_dicts, detail_ref_dicts):
+            m = compute_bleu_rouge(pred, ref)
+            k_metric = [(k + '|' + key, v) for key, v in m.items()]
+            metrics.update(k_metric)
+
     elif task == 'entity':
         pred_dict, ref_dict = prepare_prf(pred_result_filtered,
                 ref_result_filtered)
@@ -237,6 +250,39 @@ def get_metrics(pred_result, ref_result, task, source):
     return metrics
 
 
+def prepare_yesno_detail_bleu(pred_result, ref_result):
+    """
+    Prepares for calculation of bleu and rouge for specific yesno label.
+    """
+    refs = [{}, {}, {}, {}]
+    preds = [{}, {}, {}, {}]
+    tps = {label: i for i, label in enumerate(list(YESNO_LABELS))}
+
+    for question_id, info in ref_result.items():
+        if info['question_type'] != 'YES_NO':
+            continue
+        yesno_types = info['yesno_answers']
+        answers = info['answers']
+        for tp, ans in zip(yesno_types, answers):
+            key = str(question_id) + '_' + tp
+            idx = tps[tp]
+            refs[idx][key] = refs[idx].get(key, [])
+            refs[idx][key].append(ans)
+
+            pred_result[question_id] = pred_result.get(question_id,
+                    {'yesno_answers': [], 'answers': []})
+            if tp in set(pred_result[question_id]['yesno_answers']):
+                idx_ = pred_result[question_id]['yesno_answers'].index(tp)
+                # predict question_id should have only one element
+                # directly do assigning than appending.
+                preds[idx][key] = [pred_result[question_id]['answers'][idx_]]
+            else:
+                preds[idx][key] = [EMPTY]
+    labels = sorted([(l, i) for l, i in tps.items()], key=lambda x: x[1])
+    keys = [x[0] for x in labels]
+    return keys, preds, refs
+
+
 def prepare_bleu(pred_result, ref_result, task):
     """
     Prepares data for calculation of bleu and rouge scores.
@@ -244,14 +290,16 @@ def prepare_bleu(pred_result, ref_result, task):
     pred_list, ref_list = [], []
     qids = ref_result.keys()
     for qid in qids:
-        if task == 'basic':
-            pred, ref = get_basic_result(qid, pred_result, ref_result)
+        if task == 'main':
+            pred, ref = get_main_result(qid, pred_result, ref_result)
         elif task == 'yesno':
             pred, ref = get_yesno_result(qid, pred_result, ref_result)
         elif task == 'all':
             pred, ref = get_all_result(qid, pred_result, ref_result)
         elif task == 'entity':
             pred, ref = get_entity_result(qid, pred_result, ref_result)
+        elif task == 'description':
+            pred, ref = get_desc_result(qid, pred_result, ref_result)
         else:
             raise ValueError("Illegal task name: {}".format(task))
         if pred and ref:
@@ -267,24 +315,24 @@ def prepare_bleu(pred_result, ref_result, task):
 
     for k, v in pred_dict.items():
         assert len(v) == 1, \
-            "There should be only one predict answer. query_id: {}".format(k)
+            "There should be only one predict answer. question_id: {}".format(k)
     return pred_dict, ref_dict
 
 
-def get_basic_result(qid, pred_result, ref_result):
+def get_main_result(qid, pred_result, ref_result):
     """
-    Prepare answers for task 'basic'.
+    Prepare answers for task 'main'.
 
     Args:
-        qid: query_id.
-        pred_result: A dict include all query_id's result information read
+        qid: question_id.
+        pred_result: A dict include all question_id's result information read
                      from args.pred_file.
-        ref_result: A dict incluce all query_id's result information read
+        ref_result: A dict incluce all question_id's result information read
                     from args.ref_file.
     Returns:
         Two lists, the first one contains predict result, the second
-        one contains reference result of the same query_id. Each list has
-        elements of tuple (query_id, answers), 'answers' is a list of strings.
+        one contains reference result of the same question_id. Each list has
+        elements of tuple (question_id, answers), 'answers' is a list of strings.
     """
     ref_ans = normalize(ref_result[qid]['answers'])
     if not ref_ans:
@@ -301,19 +349,39 @@ def get_entity_result(qid, pred_result, ref_result):
     Prepare answers for task 'entity'.
 
     Args:
-        qid: query_id.
-        pred_result: A dict include all query_id's result information read
+        qid: question_id.
+        pred_result: A dict include all question_id's result information read
                      from args.pred_file.
-        ref_result: A dict incluce all query_id's result information read
+        ref_result: A dict incluce all question_id's result information read
                     from args.ref_file.
     Returns:
         Two lists, the first one contains predict result, the second
-        one contains reference result of the same query_id. Each list has
-        elements of tuple (query_id, answers), 'answers' is a list of strings.
+        one contains reference result of the same question_id. Each list has
+        elements of tuple (question_id, answers), 'answers' is a list of strings.
     """
-    if ref_result[qid]['query_type'] != 'ENTITY':
+    if ref_result[qid]['question_type'] != 'ENTITY':
         return None, None
-    return get_basic_result(qid, pred_result, ref_result)
+    return get_main_result(qid, pred_result, ref_result)
+
+
+def get_desc_result(qid, pred_result, ref_result):
+    """
+    Prepare answers for task 'description'.
+
+    Args:
+        qid: question_id.
+        pred_result: A dict include all question_id's result information read
+                     from args.pred_file.
+        ref_result: A dict incluce all question_id's result information read
+                    from args.ref_file.
+    Returns:
+        Two lists, the first one contains predict result, the second
+        one contains reference result of the same question_id. Each list has
+        elements of tuple (question_id, answers), 'answers' is a list of strings.
+    """
+    if ref_result[qid]['question_type'] != 'DESCRIPTION':
+        return None, None
+    return get_main_result(qid, pred_result, ref_result)
 
 
 def get_yesno_result(qid, pred_result, ref_result):
@@ -321,15 +389,15 @@ def get_yesno_result(qid, pred_result, ref_result):
     Prepare answers for task 'yesno'.
 
     Args:
-        qid: query_id.
-        pred_result: A dict include all query_id's result information read
+        qid: question_id.
+        pred_result: A dict include all question_id's result information read
                      from args.pred_file.
-        ref_result: A dict incluce all query_id's result information read
+        ref_result: A dict incluce all question_id's result information read
                     from args.ref_file.
     Returns:
         Two lists, the first one contains predict result, the second
-        one contains reference result of the same query_id. Each list has
-        elements of tuple (query_id, answers), 'answers' is a list of strings.
+        one contains reference result of the same question_id. Each list has
+        elements of tuple (question_id, answers), 'answers' is a list of strings.
     """
     def _uniq(li, is_ref):
         uniq_li = []
@@ -365,7 +433,7 @@ def get_yesno_result(qid, pred_result, ref_result):
         ret = [(str(qid) + '_' + k, v) for k, v in _expand_result(lbl_ans)]
         return ret
 
-    if ref_result[qid]['query_type'] != 'YES_NO':
+    if ref_result[qid]['question_type'] != 'YES_NO':
         return None, None
 
     ref_ans = _get_yesno_ans(qid, ref_result, is_ref=True)
@@ -378,19 +446,19 @@ def get_all_result(qid, pred_result, ref_result):
     Prepare answers for task 'all'.
 
     Args:
-        qid: query_id.
-        pred_result: A dict include all query_id's result information read
+        qid: question_id.
+        pred_result: A dict include all question_id's result information read
                      from args.pred_file.
-        ref_result: A dict incluce all query_id's result information read
+        ref_result: A dict incluce all question_id's result information read
                     from args.ref_file.
     Returns:
         Two lists, the first one contains predict result, the second
-        one contains reference result of the same query_id. Each list has
-        elements of tuple (query_id, answers), 'answers' is a list of strings.
+        one contains reference result of the same question_id. Each list has
+        elements of tuple (question_id, answers), 'answers' is a list of strings.
     """
-    if ref_result[qid]['query_type'] == 'YES_NO':
+    if ref_result[qid]['question_type'] == 'YES_NO':
         return get_yesno_result(qid, pred_result, ref_result)
-    return get_basic_result(qid, pred_result, ref_result)
+    return get_main_result(qid, pred_result, ref_result)
 
 
 def format_metrics(metrics, task, err_msg):
@@ -402,47 +470,71 @@ def format_metrics(metrics, task, err_msg):
         task: Task name.
         err_msg: Exception raised during evaluation.
     Returns:
-        Formatted result. If task is 'entity', the returned result have 4
-        fields, for example:
-            >>> {'precision': '0.9', 'recall': '0.9', 'f1-score': '0.9',
-            ...  'err': None}
-
-        If the task is one of 'basic', 'yesno', or 'all', the result should
-        be like:
-            >>> {'bleu_4': '0.25', 'rouge_l': '0.28', 'err': None}
-
-        All metrics will be cast into strings intead of float numbers.
-
+        Formatted result.
     """
     result = {}
-    sources = ['both', 'search', 'zhidao']
+    sources = ["both", "search", "zhidao"]
     if err_msg is not None:
         return {'errorMsg': str(err_msg), 'errorCode': 1, 'data': []}
     data = []
-    if task == 'entity':
-        for src in sources:
-            data.append((src, 'F1', round(metrics[src].get('f1', 0) * 100, 2)))
-            data.append(
-                (src, 'Precision',
-                 round(metrics[src].get('precision', 0) * 100, 2)))
-            data.append(
-                (src, 'Recall', round(metrics[src].get('recall', 0) * 100, 2)))
-            data.append(
-                (src, 'Bleu-4', round(metrics[src].get('bleu_4', 0) * 100, 2)))
-            data.append(
-                (src, 'Rouge-L', round(metrics[src].get('rouge_l', 0) * 100, 2)))
-        result['data'] = data
-        result['errorCode'] = 0
-        result['errorMsg'] = 'success'
+    if task != 'all':
+        sources = ["both"]
+
+    if task == 'all':
+        metric_names = ["Bleu-4", "Rouge-L"]
+        for name in metric_names:
+            for src in sources:
+                obj = {
+                    "name": name,
+                    "value": round(metrics[src].get(name, 0) * 100, 2),
+                    "type": src,
+                    }
+                data.append(obj)
+    elif task == 'entity':
+        metric_names = ["Bleu-4", "Rouge-L"]
+        metric_names_prf = ["F1", "Precision", "Recall"]
+        for name in metric_names + metric_names_prf:
+            for src in sources:
+                obj = {
+                    "name": name,
+                    "value": round(metrics[src].get(name, 0) * 100, 2),
+                    "type": src,
+                    }
+                data.append(obj)
+    elif task == 'yesno':
+        metric_names = ["Bleu-4", "Rouge-L"]
+        details = ["Yes", "No", "Depends"]
+        src = sources[0]
+        for name in metric_names:
+            obj = {
+                "name": name,
+                "value": round(metrics[src].get(name, 0) * 100, 2),
+                "type": 'All',
+                }
+            data.append(obj)
+            for d in details:
+                obj = {
+                    "name": name,
+                    "value": \
+                        round(metrics[src].get(d + '|Bleu_4', 0) * 100, 2),
+                    "type": d,
+                    }
+                data.append(obj)
     else:
-        for src in sources:
-            data.append(
-                (src, 'Bleu-4', round(metrics[src].get('bleu_4', 0) * 100, 2)))
-            data.append(
-                (src, 'Rouge-L', round(metrics[src].get('rouge_l', 0) * 100, 2)))
-        result['data'] = data
-        result['errorCode'] = 0
-        result['errorMsg'] = 'success'
+        metric_names = ["Bleu-4", "Rouge-L"]
+        for name in metric_names:
+            for src in sources:
+                obj = {
+                    "name": name,
+                    "value": \
+                        round(metrics[src].get(name, 0) * 100, 2),
+                    "type": src,
+                    }
+                data.append(obj)
+
+    result["data"] = data
+    result["errorCode"] = 0
+    result["errorMsg"] = "success"
 
     return result
 
@@ -454,23 +546,30 @@ def main(args):
     err = None
     metrics = {}
     try:
-        pred_result = read_file(args.pred_file)
-        ref_result = read_file(args.ref_file, type='reference')
-        for source in ['both', 'zhidao', 'search']:
+        pred_result = read_file(args.pred_file, args.task)
+        ref_result = read_file(args.ref_file, args.task, is_ref=True)
+        sources = ['both', 'search', 'zhidao']
+        if args.task != 'main':
+            sources = sources[:1]
+        for source in sources:
             metrics[source] = get_metrics(
                     pred_result, ref_result, args.task, source)
     except ValueError as ve:
         err = ve
     except AssertionError as ae:
         err = ae
-    print format_metrics(metrics, args.task, err)
+    print json.dumps(
+            format_metrics(metrics, args.task, err),
+            ensure_ascii=False).encode('utf8')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('pred_file', help='predict file')
     parser.add_argument('ref_file', help='reference file')
-    parser.add_argument('task', help='task name: basic|yesno|all|entity')
+    parser.add_argument('task',
+            help='task name: Main|Yes_No|All|Entity|Description')
 
     args = parser.parse_args()
+    args.task = args.task.lower().replace('_', '')
     main(args)

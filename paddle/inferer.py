@@ -16,9 +16,6 @@
 # ==============================================================================
 """
 This module implements an inferer for basic inference and evaluation functions.
-
-Authors: liuyuan(liuyuan04@baidu.com)
-Date: 2017/09/20 12:00:00
 """
 
 import argparse
@@ -52,9 +49,9 @@ class Inferer(object):
         self.test_reader = datasets[1]
         self.feeding = datasets[1].feeding
         self.costs = []
-        self.__prepare()
+        self._prepare()
 
-    def __prepare(self):
+    def _prepare(self):
         # prepare reader
         self.test_reader = paddle.batch(
                            reader=self.test_reader.create_reader(),
@@ -97,7 +94,7 @@ class Inferer(object):
         is_exist = os.path.isfile(infer_file)
         return is_exist, infer_file
 
-    def run(self):
+    def start(self):
         """
         Runs the whole inferring process.
         """
