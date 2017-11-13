@@ -29,7 +29,7 @@ from bleu_metric.bleu import Bleu
 from rouge_metric.rouge import Rouge
 
 EMPTY = ''
-YESNO_LABELS = set(['None', 'Yes', 'No', 'Depends'])
+YESNO_LABELS = set(['Yes', 'No', 'Depends'])
 
 
 def normalize(s):
@@ -62,7 +62,6 @@ def data_check(obj, task):
     assert 'question_type' in obj, \
             "Missing 'question_type' field. question_id: {}".format(obj['question_type'])
 
-    #if task == 'yesno' and obj['question_type'] == 'YES_NO':
     assert 'yesno_answers' in obj, \
             "Missing 'yesno_answers' field. question_id: {}".format(obj['question_id'])
     assert isinstance(obj['yesno_answers'], list), \
@@ -70,11 +69,11 @@ def data_check(obj, task):
             'YES_NO', then this field should be an empty list.
             question_id: {}""".format(obj['question_id'])
 
-    #if task == 'entity' and obj['question_type'] == 'ENTITY':
-    assert 'entities' in obj, \
-            "Missing 'entities' field. question_id: {}".format(obj['question_id'])
-    assert isinstance(obj['entities'], list) and len(obj['entities']) > 0, \
-            r"""'entities' field must be a list, and has at least one element,
+    assert 'entity_answers' in obj, \
+            "Missing 'entity_answers' field. question_id: {}".format(obj['question_id'])
+    assert isinstance(obj['entity_answers'], list) \
+            and len(obj['entity_answers']) > 0, \
+            r"""'entity_answers' field must be a list, and has at least one element,
             which can be a empty list. question_id: {}""".format(obj['question_id'])
 
 
@@ -89,10 +88,10 @@ def read_file(file_name, task, is_ref=False):
     Returns:
         A dictionary mapping question_id to the result information. The result
         information itself is also a dictionary with has four keys:
-        - question_type: type of the question.
+        - question_type: type of the query.
         - yesno_answers: A list of yesno answers corresponding to 'answers'.
         - answers: A list of predicted answers.
-        - entities: A list, each element is also a list containing the entities
+        - entity_answers: A list, each element is also a list containing the entities
                     tagged out from the corresponding answer string.
     """
     def _open(file_name, mode, zip_obj=None):
@@ -101,7 +100,7 @@ def read_file(file_name, task, is_ref=False):
         return open(file_name, mode)
 
     results = {}
-    keys = ['answers', 'yesno_answers', 'entities', 'question_type']
+    keys = ['answers', 'yesno_answers', 'entity_answers', 'question_type']
     if is_ref:
         keys += ['source']
 
@@ -194,8 +193,8 @@ def prepare_prf(pred_dict, ref_dict):
     """
     Prepares data for calculation of prf scores.
     """
-    preds = {k: v['entities'] for k, v in pred_dict.items()}
-    refs = {k: v['entities'] for k, v in ref_dict.items()}
+    preds = {k: v['entity_answers'] for k, v in pred_dict.items()}
+    refs = {k: v['entity_answers'] for k, v in ref_dict.items()}
     return preds, refs
 
 
@@ -477,7 +476,7 @@ def format_metrics(metrics, task, err_msg):
     if err_msg is not None:
         return {'errorMsg': str(err_msg), 'errorCode': 1, 'data': []}
     data = []
-    if task != 'all':
+    if task != 'all' and task != 'main':
         sources = ["both"]
 
     if task == 'all':
