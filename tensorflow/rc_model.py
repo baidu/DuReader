@@ -308,13 +308,13 @@ class RCModel(object):
                     pred_answers.append({'question_id': sample['question_id'],
                                          'question_type': sample['question_type'],
                                          'answers': [best_answer],
-                                         'entities': [[]],
+                                         'entity_answers': [[]],
                                          'yesno_answers': []})
                 if 'answers' in sample:
                     ref_answers.append({'question_id': sample['question_id'],
                                          'question_type': sample['question_type'],
                                          'answers': sample['answers'],
-                                         'entities': [[]],
+                                         'entity_answers': [[]],
                                          'yesno_answers': []})
 
         if result_dir is not None and result_prefix is not None:
