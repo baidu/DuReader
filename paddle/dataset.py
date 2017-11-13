@@ -47,7 +47,7 @@ class Dataset(object):
                  append_raw=False,
                  is_infer=False,
                  max_p_len=500):
-        self.file_name = file_name
+        self.file_names = file_name
         self.data = []
         self.raw = []
         self.vocab = self.read_vocab(vocab_file, vocab_size) \
@@ -70,9 +70,10 @@ class Dataset(object):
         Loads all data records into self.data.
         """
         self.data = []
-        with open(self.file_name, 'r') as src:
-            for line in src:
-                self.data += self.parse(line.strip())
+        for file_name in self.file_names:
+            with open(self.file_name, 'r') as src:
+                for line in src:
+                    self.data += self.parse(line.strip())
         if self.shuffle:
             logger.info('Shuffling data...')
             random.shuffle(self.data)
@@ -138,13 +139,14 @@ class Dataset(object):
                 yield line
 
         def _reader_stream():
-            with open(self.file_name, 'r') as fn:
-                for line in fn:
-                    data = self.parse(line.strip())
-                    if not data:
-                        continue
-                    for d in data:
-                        yield d
+            for file_name in self.file_names:
+                with open(self.file_name, 'r') as fn:
+                    for line in fn:
+                        data = self.parse(line.strip())
+                        if not data:
+                            continue
+                        for d in data:
+                            yield d
 
         if not self.preload:
             return _reader_stream
@@ -156,7 +158,7 @@ class DuReaderYesNo(Dataset):
     Implements parser for yesno task.
     """
     def __init__(self, *args, **kwargs):
-        self.labels = {'None': 0, 'Yes': 1, 'No': 2, 'Depends': 3}
+        self.labels = {'Yes': 0, 'No': 1, 'Depends': 2}
         super(DuReaderYesNo, self).__init__(*args, **kwargs)
         self.schema = ['q_ids', 'a_ids', 'label']
         self.feeding = {name: i for i, name in enumerate(self.schema)}

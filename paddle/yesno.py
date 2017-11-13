@@ -16,11 +16,8 @@
 # ==============================================================================
 """
 This module implements an opinion classification model to classify a
-question answer pair into 4 categories: None(no opinion), Yes(positive opinion),
+question answer pair into 3 categories: Yes(positive opinion),
 No(negative opinion), Depends(depends on conditions).
-
-Authors: liuyuan(liuyuan04@baidu.com)
-Date: 2017/09/20 12:00:00
 """
 
 import logging
@@ -49,9 +46,9 @@ class OpinionClassifier(MatchLstm):
         self.emb_dim = kwargs['emb_dim']
         self.vocab_size = kwargs['vocab_size']
         self.is_infer = kwargs['is_infer']
-        self.label_dim = 4
-        self.static_emb = kwargs['static_emb']
-        self.labels = ['None', 'Yes', 'No', 'Depends']
+        self.label_dim = 3
+        self.static_emb = kwargs.get('static_emb', False)
+        self.labels = ['Yes', 'No', 'Depends']
         self.label_dict = {v: idx for idx, v in enumerate(self.labels)}
         super(OpinionClassifier, self).__init__(name, inputs, *args, **kwargs)
 
@@ -133,8 +130,6 @@ class OpinionClassifier(MatchLstm):
                 input=cls, name='label1', label=self.label, positive_label=1)
         evaluator_2 = paddle.evaluator.precision_recall(
                 input=cls, name='label2', label=self.label, positive_label=2)
-        evaluator_3 = paddle.evaluator.precision_recall(
-                input=cls, name='label3', label=self.label, positive_label=3)
         evaluator_all = paddle.evaluator.precision_recall(
                 input=cls, name='label_all', label=self.label)
         return loss

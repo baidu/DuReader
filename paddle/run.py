@@ -139,8 +139,8 @@ def parse_args():
     Parses command line arguments.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--trainset', help='train dataset')
-    parser.add_argument('--testset', help='test dataset')
+    parser.add_argument('--trainset', nargs='+', help='train dataset')
+    parser.add_argument('--testset', nargs='+', help='test dataset')
     parser.add_argument('--test_period', type=int, default=10)
     parser.add_argument('--vocab_file', help='dict')
     parser.add_argument('--batch_size', help='batch size',
