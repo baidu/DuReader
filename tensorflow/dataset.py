@@ -148,7 +148,7 @@ class BRCDataset(object):
         batch_data['passage_token_ids'] = [(ids + [pad_id] * (pad_p_len - len(ids)))[: pad_p_len]
                                            for ids in batch_data['passage_token_ids']]
         batch_data['question_token_ids'] = [(ids + [pad_id] * (pad_q_len - len(ids)))[: pad_q_len]
-                                         for ids in batch_data['question_token_ids']]
+                                            for ids in batch_data['question_token_ids']]
         return batch_data, pad_p_len, pad_q_len
 
     def word_iter(self, set_name=None):
