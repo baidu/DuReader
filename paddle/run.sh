@@ -46,8 +46,8 @@ mkdir -p $infer_dir
 mkdir -p $log_dir
 
 
-emb_dim=100
-vocab_size=218967
+emb_dim=300
+vocab_size=200000
 
 train() {
     cp *.py $env_dir/
@@ -58,7 +58,7 @@ train() {
         --emb_dim $emb_dim \
         --batch_size 32 \
         --vocab_size $vocab_size \
-        --trainer_count 2 \
+        --trainer_count 1 \
         --log_period 10 \
         --test_period 100 \
         --use_gpu \
