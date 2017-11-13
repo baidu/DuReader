@@ -71,7 +71,7 @@ def parse_args():
                                 help='size of the embeddings')
     model_settings.add_argument('--hidden_size', type=int, default=150,
                                 help='size of LSTM hidden units')
-    model_settings.add_argument('--max_p_num', type=int, default=10,
+    model_settings.add_argument('--max_p_num', type=int, default=5,
                                 help='max passage num in one sample')
     model_settings.add_argument('--max_p_len', type=int, default=500,
                                 help='max length of passage')
