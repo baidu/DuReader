@@ -98,14 +98,14 @@ class Env(object):
             train_reader = None
         else:
             train_reader = dataset.DuReaderQA(
-                           file_name=self.args.trainset,
+                           file_names=self.args.trainset,
                            vocab_file=self.args.vocab_file,
                            vocab_size=self.args.vocab_size,
                            max_p_len=self.args.max_p_len,
                            shuffle=(not self.args.is_infer),
                            preload=(not self.args.is_infer))
         test_reader = dataset.DuReaderQA(
-                      file_name=self.args.testset,
+                      file_names=self.args.testset,
                       vocab_file=self.args.vocab_file,
                       vocab_size=self.args.vocab_size,
                       max_p_len=self.args.max_p_len,
@@ -119,13 +119,13 @@ class Env(object):
             train_reader = None
         else:
             train_reader = dataset.DuReaderYesNo(
-                           file_name=self.args.trainset,
+                           file_names=self.args.trainset,
                            vocab_file=self.args.vocab_file,
                            vocab_size=self.args.vocab_size,
                            preload=True,
                            shuffle=True)
         test_reader = dataset.DuReaderYesNo(
-                      file_name=self.args.testset,
+                      file_names=self.args.testset,
                       vocab_file=self.args.vocab_file,
                       vocab_size=self.args.vocab_size,
                       is_infer=self.args.is_infer,

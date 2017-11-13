@@ -71,7 +71,7 @@ class Dataset(object):
         """
         self.data = []
         for file_name in self.file_names:
-            with open(self.file_name, 'r') as src:
+            with open(file_name, 'r') as src:
                 for line in src:
                     self.data += self.parse(line.strip())
         if self.shuffle:
@@ -363,7 +363,7 @@ class DuReaderQA(Dataset):
 if __name__ == '__main__':
     data = sys.argv[1]
     vocab = sys.argv[2]
-    dataset = DuReaderYesNo(file_name=data,
+    dataset = DuReaderYesNo(file_names=data,
             vocab_file=vocab,
             preload=False,
             max_p_len=300,
