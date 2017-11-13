@@ -317,9 +317,10 @@ class DuReaderQA(Dataset):
         info['question'] = obj['segmented_question']
         info['question_id'] = obj['question_id']
         info['question_type'] = obj['question_type']
-        info['yesno_answers_ref'] = obj.get('yesno_answers', [])
         info['yesno_answers'] = []
-        info['entities'] = obj.get('entity_answers', [[]])
+        info['yesno_answers_ref'] = obj.get('yesno_answers', [])
+        info['entity_answers'] = [[]]
+        info['entity_answers_ref'] = obj.get('entity_answers', [[]])
         return info
 
     def parse(self, line):
