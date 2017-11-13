@@ -45,9 +45,9 @@ class RCModel(object):
         self.emb_dim = kwargs['emb_dim']
         self.vocab_size = kwargs['vocab_size']
         self.is_infer = kwargs['is_infer']
-        self.doc_num = kwargs['doc_num']
-        self.static_emb = kwargs['static_emb']
-        self.max_a_len = kwargs['max_a_len']
+        self.doc_num = kwargs.get('doc_num', 5)
+        self.static_emb = kwargs.get('static_emb', False)
+        self.max_a_len = kwargs.get('max_a_len', 200)
 
     def check_and_create_data(self):
         """
