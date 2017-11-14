@@ -7,7 +7,7 @@ DuReader is a new large-scale real-world and human sourced MRC dataset in Chines
  - Rich annotation
 
 # DuReader Baseline Systems
-DuReader system implements 2 classic reading comprehension models([BiDAF]() and [Match-LSTM]()) on [DuReader dataset](). The system is implemented with 2 frameworks: [PaddlePaddle]() and [TensorFlow]().
+DuReader system implements 2 classic reading comprehension models([BiDAF](https://arxiv.org/abs/1611.01603) and [Match-LSTM](https://arxiv.org/abs/1608.07905)) on [DuReader dataset](https://ai.baidu.com//broad/subordinate?dataset=dureader). The system is implemented with 2 frameworks: [PaddlePaddle](http://paddlepaddle.org) and [TensorFlow](https://www.tensorflow.org).
 
 ## How to Run
 ### Download the Dataset
@@ -15,7 +15,7 @@ To Download DuReader dataset:
 ```
 cd data && bash download.sh
 ```
-For more details about DuReader dataset please refer to [DuReader Homepage]().
+For more details about DuReader dataset please refer to [DuReader Homepage](https://ai.baidu.com//broad/subordinate?dataset=dureader).
 ### Preprocess the Data
 After the dataset is downloaded, there is still some work to do to run the baseline systems. DuReader dataset offers rich amount of documents for every user question, the documents are too long for popular RC models to cope with. In our baseline models, we preprocess the train set and development set data by selecting the paragraph that is most related to the answer string, while for inferring(no available golden answer), we select the paragraph that is most related to the question string. The preprocessing strategy is implemented in `utils/preprocess.py`. To preprocess the raw data, run:
 ```
@@ -37,7 +37,7 @@ pip install paddlepaddle
 # GPU
 pip install paddlepaddle-gpu
 ```
-To install PaddlePaddle by other ways and for more details about PaddlePaddle, see [PaddlePaddle Homepage]().
+To install PaddlePaddle by other ways and for more details about PaddlePaddle, see [PaddlePaddle Homepage](http://paddlepaddle.org).
 #### Training
 We implement 3 models with PaddlePaddle: Match-LSTM, BiDAF, and a classification model for data with `query_type='YES_NO'`, the model simply replaces the Pointer-Net on top of Match-LSTM model with a one-layered classifier. The 3 implemented models can all be trained and inferred by run `run.py`, to specify the model to train or to infer, use `--algo [mlstm|bidaf|yesno]`, for complete usage run `python run.py -h`.
 
@@ -74,7 +74,7 @@ You can infer and evaluate your models on development data set locally by follow
 2. infer your models on dev set and pick the best model.
 3. keep only the best model under `models/<EXPERIMENT_NAME>/models`.
 4. infer again with test set.
-5. [submit the infer result file]().
+5. [submit the infer result file](http://ai.baidu.com/broad/submission?dataset=dureader).
 
 ### Run Tensorflow
 
