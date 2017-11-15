@@ -38,7 +38,7 @@ class Dataset(object):
     Base dataset class for various tasks.
     """
     def __init__(self,
-                 file_name=None,
+                 file_names=None,
                  vocab_file=None,
                  vocab_size=0,
                  shuffle=False,
@@ -47,7 +47,7 @@ class Dataset(object):
                  append_raw=False,
                  is_infer=False,
                  max_p_len=500):
-        self.file_names = file_name
+        self.file_names = file_names
         self.data = []
         self.raw = []
         self.vocab = self.read_vocab(vocab_file, vocab_size) \
@@ -140,7 +140,7 @@ class Dataset(object):
 
         def _reader_stream():
             for file_name in self.file_names:
-                with open(self.file_name, 'r') as fn:
+                with open(file_name, 'r') as fn:
                     for line in fn:
                         data = self.parse(line.strip())
                         if not data:

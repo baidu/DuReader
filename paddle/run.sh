@@ -52,8 +52,8 @@ vocab_size=200000
 train() {
     cp *.py $env_dir/
     PYTHONPATH=$PWD:$ROOT CUDA_VISIBLE_DEVICES=0 python $env_dir/run.py \
-        --trainset ../data/preprocessed/search.train.json \
-        --testset ../data/preprocessed/search.dev.json \
+        --trainset ../data/preprocessed/trainset/search.train.json \
+        --testset ../data/preprocessed/devset/search.dev.json \
         --vocab_file ../data/vocab.search \
         --emb_dim $emb_dim \
         --batch_size 32 \

@@ -19,13 +19,13 @@ For more details about DuReader dataset please refer to [DuReader Homepage](http
 ### Preprocess the Data
 After the dataset is downloaded, there is still some work to do to run the baseline systems. DuReader dataset offers rich amount of documents for every user question, the documents are too long for popular RC models to cope with. In our baseline models, we preprocess the train set and development set data by selecting the paragraph that is most related to the answer string, while for inferring(no available golden answer), we select the paragraph that is most related to the question string. The preprocessing strategy is implemented in `utils/preprocess.py`. To preprocess the raw data, run:
 ```
-cat data/raw/search.train.json | python utils/preprocess.py > data/preprocessed/search.train.json
+cat data/raw/trainset/search.train.json | python utils/preprocess.py > data/preprocessed/trainset/search.train.json
 ```
 The preprocessing is already included in `data/download.sh`, the preprocessed data is stored in `data/preprocess`, the downloaded raw data is under `data/raw`.
 
 Once the preprocessed data is ready, you can run `utils/get_vocab.py` to generate the vocabulary file, for example, if you want to train model with Baidu Search data:
 ```
-python utils/get_vocab.py --files data/preprocess/search.train.json data/preprocess/search.dev.json  --vocab data/vocab.search
+python utils/get_vocab.py --files data/preprocessed/trainset/search.train.json data/preprocessed/devset/search.dev.json  --vocab data/vocab.search
 ```
 
 ### Run PaddlePaddle
@@ -95,7 +95,7 @@ To train the reading comprehension model, you can specify the model type by usin
 python run.py --task zhidao --algo BIDAF --epochs 10
 ```
 
-The training process includes an evaluation on the dev set after each training epoch. By default, the model with the least bleu4 score on the dev set will be saved.
+The training process includes an evaluation on the dev set after each training epoch. By default, the model with the least Bleu-4 score on the dev set will be saved.
 
 #### Evaluation
 To conduct a single evaluation on the dev set with the the model already trained, you can run the following command:

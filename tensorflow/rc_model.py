@@ -51,6 +51,7 @@ class RCModel(object):
         self.optim_type = args.optim
         self.learning_rate = args.learning_rate
         self.weight_decay = args.weight_decay
+        self.use_dropout = args.dropout_keep_prob < 1
 
         # length limit
         self.max_p_num = args.max_p_num
@@ -125,6 +126,9 @@ class RCModel(object):
             self.sep_p_encodes, _ = rnn('bi-lstm', self.p_emb, self.p_length, self.hidden_size)
         with tf.variable_scope('question_encoding'):
             self.sep_q_encodes, _ = rnn('bi-lstm', self.q_emb, self.q_length, self.hidden_size)
+        if self.use_dropout:
+            self.sep_p_encodes = tf.nn.dropout(self.sep_p_encodes, self.dropout_keep_prob)
+            self.sep_q_encodes = tf.nn.dropout(self.sep_q_encodes, self.dropout_keep_prob)
 
     def _match(self):
         """
@@ -138,6 +142,8 @@ class RCModel(object):
             raise NotImplementedError('The algorithm {} is not implemented.'.format(self.algo))
         self.match_p_encodes, _ = match_layer.match(self.sep_p_encodes, self.sep_q_encodes,
                                                     self.p_length, self.q_length)
+        if self.use_dropout:
+            self.match_p_encodes = tf.nn.dropout(self.match_p_encodes, self.dropout_keep_prob)
 
     def _fuse(self):
         """
@@ -146,6 +152,8 @@ class RCModel(object):
         with tf.variable_scope('fusion'):
             self.fuse_p_encodes, _ = rnn('bi-lstm', self.match_p_encodes, self.p_length,
                                          self.hidden_size, layer_num=1)
+            if self.use_dropout:
+                self.fuse_p_encodes = tf.nn.dropout(self.fuse_p_encodes, self.dropout_keep_prob)
 
     def _decode(self):
         """
