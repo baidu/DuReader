@@ -16,16 +16,18 @@
 # ==============================================================================
 
 
-if [[ -d train ]] && [[ -d dev ]]; then
-  echo "data exist"
-  exit 0
+if [[ -d preprocessed ]] && [[ -d raw ]]; then
+    echo "data exist"
+    exit 0
 else
-  wget -c http://fake_url/to/fake_data.zip
+    wget -c https://aipedataset.cdn.bcebos.com/dureader/dureader_raw.zip
+    wget -c https://aipedataset.cdn.bcebos.com/dureader/dureader_preprocessed.zip
 fi
 
-if [[ `md5sum -c md5sum.txt` =~ 'OK' ]] ; then
-    unzip fake_data.zip
+if md5sum --status -c md5sum.txt; then
+    unzip dureader_raw.zip
+    unzip dureader_preprocessed.zip
 else
-  echo "download data error!" >> /dev/stderr
-  exit 1
+    echo "download data error!" >> /dev/stderr
+    exit 1
 fi
