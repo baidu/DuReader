@@ -95,7 +95,7 @@ To train the reading comprehension model, you can specify the model type by usin
 python run.py --task zhidao --algo BIDAF --epochs 10
 ```
 
-The training process includes an evaluation on the dev set after each training epoch. By default, the model with the least bleu4 score on the dev set will be saved.
+The training process includes an evaluation on the dev set after each training epoch. By default, the model with the least Bleu-4 score on the dev set will be saved.
 
 #### Evaluation
 To conduct a single evaluation on the dev set with the the model already trained, you can run the following command:
