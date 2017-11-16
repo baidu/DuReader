@@ -31,6 +31,10 @@ cat data/raw/trainset/search.train.json | python utils/preprocess.py > data/prep
 ```
 The preprocessed data can be automatically downloaded by `data/download.sh`, and is stored in `data/preprocessed`, the raw data before preprocessing is under `data/raw`.
 
+### Run PaddlePaddle
+
+#### Get the Vocab File
+
 Once the preprocessed data is ready, you can run `utils/get_vocab.py` to generate the vocabulary file, for example, if you want to train model with Baidu Search data:
 ```
 python utils/get_vocab.py --files data/preprocessed/trainset/search.train.json data/preprocessed/devset/search.dev.json  --vocab data/vocab.search
@@ -41,7 +45,6 @@ If you want to use the demo data, run:
 python utils/get_vocab.py --files data/demo/trainset/search.train.json data/demo/devset/search.dev.json  --vocab data/demo/vocab.search
 ```
 
-### Run PaddlePaddle
 #### Environment requirements
 Install the latest PaddlePaddle by:
 ```
