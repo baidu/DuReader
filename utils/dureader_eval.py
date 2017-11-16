@@ -198,6 +198,17 @@ def prepare_prf(pred_dict, ref_dict):
     return preds, refs
 
 
+def filter_dict(result_dict, key_tag):
+    """
+    Filter a subset of the result_dict, where keys ends with 'key_tag'.
+    """
+    filtered = {}
+    for k, v in result_dict.items():
+        if k.endswith(key_tag):
+            filtered[k] = v
+    return filtered
+
+
 def get_metrics(pred_result, ref_result, task, source):
     """
     Computes metrics.
@@ -226,11 +237,13 @@ def get_metrics(pred_result, ref_result, task, source):
         pred_dict, ref_dict = prepare_bleu(pred_result_filtered,
                 ref_result_filtered,
                 task)
-        keys, detail_pred_dicts, detail_ref_dicts = prepare_yesno_detail_bleu(
-                pred_result_filtered,
-                ref_result_filtered)
+        keys = ['Yes', 'No', 'Depends']
+        preds = [filter_dict(pred_dict, k) for k in keys]
+        refs = [filter_dict(ref_dict, k) for k in keys]
+
         metrics = compute_bleu_rouge(pred_dict, ref_dict)
-        for k, pred, ref in zip(keys, detail_pred_dicts, detail_ref_dicts):
+
+        for k, pred, ref in zip(keys, preds, refs):
             m = compute_bleu_rouge(pred, ref)
             k_metric = [(k + '|' + key, v) for key, v in m.items()]
             metrics.update(k_metric)
@@ -247,39 +260,6 @@ def get_metrics(pred_result, ref_result, task, source):
         raise ValueError("Illegal task name: {}".format(task))
 
     return metrics
-
-
-def prepare_yesno_detail_bleu(pred_result, ref_result):
-    """
-    Prepares for calculation of bleu and rouge for specific yesno label.
-    """
-    refs = [{}, {}, {}, {}]
-    preds = [{}, {}, {}, {}]
-    tps = {label: i for i, label in enumerate(list(YESNO_LABELS))}
-
-    for question_id, info in ref_result.items():
-        if info['question_type'] != 'YES_NO':
-            continue
-        yesno_types = info['yesno_answers']
-        answers = info['answers']
-        for tp, ans in zip(yesno_types, answers):
-            key = str(question_id) + '_' + tp
-            idx = tps[tp]
-            refs[idx][key] = refs[idx].get(key, [])
-            refs[idx][key].append(ans)
-
-            pred_result[question_id] = pred_result.get(question_id,
-                    {'yesno_answers': [], 'answers': []})
-            if tp in set(pred_result[question_id]['yesno_answers']):
-                idx_ = pred_result[question_id]['yesno_answers'].index(tp)
-                # predict question_id should have only one element
-                # directly do assigning than appending.
-                preds[idx][key] = [pred_result[question_id]['answers'][idx_]]
-            else:
-                preds[idx][key] = [EMPTY]
-    labels = sorted([(l, i) for l, i in tps.items()], key=lambda x: x[1])
-    keys = [x[0] for x in labels]
-    return keys, preds, refs
 
 
 def prepare_bleu(pred_result, ref_result, task):
@@ -307,10 +287,11 @@ def prepare_bleu(pred_result, ref_result, task):
     pred_dict = dict(pred_list)
     ref_dict = dict(ref_list)
     for qid, ans in ref_dict.items():
+        ref_dict[qid] = normalize(ref_dict[qid])
+        pred_dict[qid] = normalize(pred_dict.get(qid, [EMPTY]))
         if not ans or ans == [EMPTY]:
-            if pred_dict[qid] == [EMPTY]:
-                del ref_dict[qid]
-                del pred_dict[qid]
+            del ref_dict[qid]
+            del pred_dict[qid]
 
     for k, v in pred_dict.items():
         assert len(v) == 1, \
@@ -333,10 +314,10 @@ def get_main_result(qid, pred_result, ref_result):
         one contains reference result of the same question_id. Each list has
         elements of tuple (question_id, answers), 'answers' is a list of strings.
     """
-    ref_ans = normalize(ref_result[qid]['answers'])
+    ref_ans = ref_result[qid]['answers']
     if not ref_ans:
         ref_ans = [EMPTY]
-    pred_ans = normalize(pred_result.get(qid, {}).get('answers', [])[:1])
+    pred_ans = pred_result.get(qid, {}).get('answers', [])[:1]
     if not pred_ans:
         pred_ans = [EMPTY]
 
@@ -427,7 +408,7 @@ def get_yesno_result(qid, pred_result, ref_result):
         if qid not in result_dict:
             return [(str(qid) + '_' + k, v) for k, v in _expand_result([])]
         yesno_answers = result_dict[qid]['yesno_answers']
-        answers = normalize(result_dict[qid]['answers'])
+        answers = result_dict[qid]['answers']
         lbl_ans = _uniq([(k, [v]) for k, v in zip(yesno_answers, answers)], is_ref)
         ret = [(str(qid) + '_' + k, v) for k, v in _expand_result(lbl_ans)]
         return ret
@@ -479,17 +460,7 @@ def format_metrics(metrics, task, err_msg):
     if task != 'all' and task != 'main':
         sources = ["both"]
 
-    if task == 'all':
-        metric_names = ["Bleu-4", "Rouge-L"]
-        for name in metric_names:
-            for src in sources:
-                obj = {
-                    "name": name,
-                    "value": round(metrics[src].get(name, 0) * 100, 2),
-                    "type": src,
-                    }
-                data.append(obj)
-    elif task == 'entity':
+    if task == 'entity':
         metric_names = ["Bleu-4", "Rouge-L"]
         metric_names_prf = ["F1", "Precision", "Recall"]
         for name in metric_names + metric_names_prf:
@@ -515,7 +486,7 @@ def format_metrics(metrics, task, err_msg):
                 obj = {
                     "name": name,
                     "value": \
-                        round(metrics[src].get(d + '|Bleu_4', 0) * 100, 2),
+                        round(metrics[src].get(d + '|' + name, 0) * 100, 2),
                     "type": d,
                     }
                 data.append(obj)
@@ -548,7 +519,7 @@ def main(args):
         pred_result = read_file(args.pred_file, args.task)
         ref_result = read_file(args.ref_file, args.task, is_ref=True)
         sources = ['both', 'search', 'zhidao']
-        if args.task != 'main':
+        if args.task not in set(['main', 'all']):
             sources = sources[:1]
         for source in sources:
             metrics[source] = get_metrics(
@@ -557,6 +528,7 @@ def main(args):
         err = ve
     except AssertionError as ae:
         err = ae
+
     print json.dumps(
             format_metrics(metrics, args.task, err),
             ensure_ascii=False).encode('utf8')
