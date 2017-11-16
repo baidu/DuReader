@@ -45,8 +45,6 @@ def parse_args():
                         help='evaluate the model on dev set')
     parser.add_argument('--predict', action='store_true',
                         help='predict the answers for test set with trained model')
-    parser.add_argument('--task', type=str, default='both',
-                        help='reading comprehension on search/zhidao/both dataset')
     parser.add_argument('--gpu', type=str, default='0',
                         help='specify gpu device')
 
@@ -81,6 +79,14 @@ def parse_args():
                                 help='max length of answer')
 
     path_settings = parser.add_argument_group('path settings')
+    path_settings.add_argument('--train_files', nargs='+',
+                               default=['../data/demo/search.train.json'],
+                               help='list of files that contains preprocessed train data')
+    path_settings.add_argument('--dev_files', nargs='+',
+                               default=['../data/demo/search.dev.json'],
+                               help='list of files that contains preprocessed dev data')
+    path_settings.add_argument('--test_files', nargs='+', default=[],
+                               help='list of files that contains preprocessed test data')
     path_settings.add_argument('--brc_dir', default='../data/baidu',
                                help='the dir with preprocessed baidu reading comprehension data')
     path_settings.add_argument('--vocab_dir', default='../data/vocab/',
@@ -101,9 +107,8 @@ def prepare(args):
     checks data, creates the directories, prepare the vocabulary and embeddings
     """
     logger = logging.getLogger("brc")
-    logger.info('Checking the data for {} task...'.format(args.task))
-    for suffix in ['train.json', 'dev.json', 'test.json']:
-        data_path = os.path.join(args.brc_dir, args.task + '.' + suffix)
+    logger.info('Checking the data files...')
+    for data_path in args.train_files + args.dev_files + args.test_files:
         assert os.path.exists(data_path), '{} file does not exist.'
     logger.info('Preparing the directories...')
     for dir_path in [args.vocab_dir, args.model_dir, args.result_dir, args.summary_dir]:
@@ -111,7 +116,8 @@ def prepare(args):
             os.makedirs(dir_path)
 
     logger.info('Building vocabulary...')
-    brc_data = BRCDataset(args.brc_dir, args.task, args.max_p_num, args.max_p_len, args.max_q_len)
+    brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len,
+                          args.train_files, args.dev_files, args.test_files)
     vocab = Vocab(lower=True)
     for word in brc_data.word_iter('train'):
         vocab.add(word)
@@ -126,7 +132,7 @@ def prepare(args):
     vocab.randomly_init_embeddings(args.embed_size)
 
     logger.info('Saving vocab...')
-    with open(os.path.join(args.vocab_dir, args.task + '.' + 'vocab.data'), 'wb') as fout:
+    with open(os.path.join(args.vocab_dir, 'vocab.data'), 'wb') as fout:
         pickle.dump(vocab, fout)
 
     logger.info('Done with preparing!')
@@ -138,40 +144,41 @@ def train(args):
     """
     logger = logging.getLogger("brc")
     logger.info('Load data_set and vocab...')
-    with open(os.path.join(args.vocab_dir, args.task + '.' + 'vocab.data'), 'rb') as fin:
+    with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
         vocab = pickle.load(fin)
-    brc_data = BRCDataset(args.brc_dir, args.task, args.max_p_num, args.max_p_len, args.max_q_len)
+    brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len,
+                          args.train_files, args.dev_files)
     logger.info('Converting text into ids...')
     brc_data.convert_to_ids(vocab)
     logger.info('Initialize the model...')
     rc_model = RCModel(vocab, args)
     logger.info('Training the model...')
     rc_model.train(brc_data, args.epochs, args.batch_size, save_dir=args.model_dir,
-                   save_prefix=args.task + '.' + args.algo,
+                   save_prefix=args.algo,
                    dropout_keep_prob=args.dropout_keep_prob)
     logger.info('Done with model training!')
 
 
 def evaluate(args):
     """
-    evaluate the trained model on dev set
+    evaluate the trained model on dev files
     """
     logger = logging.getLogger("brc")
     logger.info('Load data_set and vocab...')
-    with open(os.path.join(args.vocab_dir, args.task + '.' + 'vocab.data'), 'rb') as fin:
+    with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
         vocab = pickle.load(fin)
-    brc_data = BRCDataset(args.brc_dir, args.task,
-                          args.max_p_num, args.max_p_len, args.max_q_len, train=False, test=False)
+    assert len(args.dev_files) > 0, 'No dev files are provided.'
+    brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len, dev_files=args.dev_files)
     logger.info('Converting text into ids...')
     brc_data.convert_to_ids(vocab)
     logger.info('Restoring the model...')
     rc_model = RCModel(vocab, args)
-    rc_model.restore(model_dir=args.model_dir, model_prefix=args.task + '.' + args.algo)
+    rc_model.restore(model_dir=args.model_dir, model_prefix=args.algo)
     logger.info('Evaluating the model on dev set...')
     dev_batches = brc_data.gen_mini_batches('dev', args.batch_size,
                                             pad_id=vocab.get_id(vocab.pad_token), shuffle=False)
     dev_loss, dev_bleu_rouge = rc_model.evaluate(
-        dev_batches, result_dir=args.result_dir, result_prefix=args.task + '.dev.predicted')
+        dev_batches, result_dir=args.result_dir, result_prefix='dev.predicted')
     logger.info('Loss on dev set: {}'.format(dev_loss))
     logger.info('Result on dev set: {}'.format(dev_bleu_rouge))
     logger.info('Predicted answers are saved to {}'.format(os.path.join(args.result_dir)))
@@ -179,24 +186,25 @@ def evaluate(args):
 
 def predict(args):
     """
-    predicts answers for test set
+    predicts answers for test files
     """
     logger = logging.getLogger("brc")
     logger.info('Load data_set and vocab...')
-    with open(os.path.join(args.vocab_dir, args.task + '.' + 'vocab.data'), 'rb') as fin:
+    with open(os.path.join(args.vocab_dir, 'vocab.data'), 'rb') as fin:
         vocab = pickle.load(fin)
-    brc_data = BRCDataset(args.brc_dir, args.task,
-                          args.max_p_num, args.max_p_len, args.max_q_len, train=False, dev=False)
+    assert len(args.test_files) > 0, 'No test files are provided.'
+    brc_data = BRCDataset(args.max_p_num, args.max_p_len, args.max_q_len,
+                          test_files=args.test_files)
     logger.info('Converting text into ids...')
     brc_data.convert_to_ids(vocab)
     logger.info('Restoring the model...')
     rc_model = RCModel(vocab, args)
-    rc_model.restore(model_dir=args.model_dir, model_prefix=args.task + '.' + args.algo)
+    rc_model.restore(model_dir=args.model_dir, model_prefix=args.algo)
     logger.info('Predicting answers for test set...')
     test_batches = brc_data.gen_mini_batches('test', args.batch_size,
                                              pad_id=vocab.get_id(vocab.pad_token), shuffle=False)
     rc_model.evaluate(test_batches,
-                      result_dir=args.result_dir, result_prefix=args.task + '.test.predicted')
+                      result_dir=args.result_dir, result_prefix='test.predicted')
 
 
 def run():

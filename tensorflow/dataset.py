@@ -29,38 +29,40 @@ class BRCDataset(object):
     """
     This module implements the APIs for loading and using baidu reading comprehension dataset
     """
-    def __init__(self, data_dir, task, max_p_num, max_p_len, max_q_len,
-                 train=True, dev=True, test=True):
+    def __init__(self, max_p_num, max_p_len, max_q_len,
+                 train_files=[], dev_files=[], test_files=[]):
         self.logger = logging.getLogger("brc")
-        self.data_dir = data_dir
-        self.task = task
         self.max_p_num = max_p_num
         self.max_p_len = max_p_len
         self.max_q_len = max_q_len
 
-        self.train_set = self._load_dataset(self.task + '.train') if train else None
-        if train:
+        self.train_set, self.dev_set, self.test_set = [], [], []
+        if train_files:
+            for train_file in train_files:
+                self.train_set += self._load_dataset(train_file, train=True)
             self.logger.info('Train set size: {} questions.'.format(len(self.train_set)))
 
-        self.dev_set = self._load_dataset(self.task + '.dev') if dev else None
-        if dev:
+        if dev_files:
+            for dev_file in dev_files:
+                self.dev_set += self._load_dataset(dev_file)
             self.logger.info('Dev set size: {} questions.'.format(len(self.dev_set)))
 
-        self.test_set = self._load_dataset(self.task + '.test') if test else None
-        if test:
+        if test_files:
+            for test_file in test_files:
+                self.test_set += self._load_dataset(test_file)
             self.logger.info('Test set size: {} questions.'.format(len(self.test_set)))
 
-    def _load_dataset(self, prefix):
+    def _load_dataset(self, data_path, train=False):
         """
         Loads the dataset
         Args:
-            prefix: task + 'train/dev/test' indicating the data file to load
+            data_path: the data file to load
         """
-        with open(os.path.join(self.data_dir, prefix + '.json')) as fin:
+        with open(data_path) as fin:
             data_set = []
             for lidx, line in enumerate(fin):
                 sample = json.loads(line.strip())
-                if 'train' in prefix:
+                if train:
                     if len(sample['answer_spans']) == 0:
                         continue
                     if sample['answer_spans'][0][1] >= self.max_p_len:
@@ -73,7 +75,7 @@ class BRCDataset(object):
 
                 sample['passages'] = []
                 for d_idx, doc in enumerate(sample['documents']):
-                    if 'train' in prefix:
+                    if train:
                         most_related_para = doc['most_related_para']
                         sample['passages'].append(
                             {'passage_tokens': doc['segmented_paragraphs'][most_related_para],
