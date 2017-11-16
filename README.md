@@ -16,6 +16,14 @@ To Download DuReader dataset:
 cd data && bash download.sh
 ```
 For more details about DuReader dataset please refer to [DuReader Homepage](https://ai.baidu.com//broad/subordinate?dataset=dureader).
+
+### Download Thirdparty Dependencies
+We use Bleu and Rouge as evaluation metrics, the calculation of these metrics relies on the scoring scripts under "https://github.com/tylin/coco-caption", to download them, run:
+
+```
+cd utils && bash download_thirdparty.sh
+```
+
 ### Preprocess the Data
 After the dataset is downloaded, there is still some work to do to run the baseline systems. DuReader dataset offers rich amount of documents for every user question, the documents are too long for popular RC models to cope with. In our baseline models, we preprocess the train set and development set data by selecting the paragraph that is most related to the answer string, while for inferring(no available golden answer), we select the paragraph that is most related to the question string. The preprocessing strategy is implemented in `utils/preprocess.py`. To preprocess the raw data, you should first segment 'question', 'title', 'paragraphs' and then store the segemented result into 'segmented_question', 'segmented_title', 'segmented_paragraphs' like the downloaded preprocessed data, then run:
 ```
@@ -26,6 +34,11 @@ The preprocessed data can be automatically downloaded by `data/download.sh`, and
 Once the preprocessed data is ready, you can run `utils/get_vocab.py` to generate the vocabulary file, for example, if you want to train model with Baidu Search data:
 ```
 python utils/get_vocab.py --files data/preprocessed/trainset/search.train.json data/preprocessed/devset/search.dev.json  --vocab data/vocab.search
+```
+
+If you want to use the demo data, run:
+```
+python utils/get_vocab.py --files data/demo/trainset/search.train.json data/demo/devset/search.dev.json  --vocab data/demo/vocab.search
 ```
 
 ### Run PaddlePaddle
@@ -66,11 +79,11 @@ For training, all scripts the experiment uses will first be copied to `env`, and
 #### Inference
 To infer a trained model, run the same command as training and change `train` to `infer`,  and add `--testset <path_to_testset>` argument. for example, suppose the 'test_bidaf' experiment is successfully trained,  to infer the saved models, run:
 ```
-bash run.sh test_bidaf bidaf infer --testset ../data/preprocessed/search.test.json
+bash run.sh test_bidaf bidaf infer --testset ../data/preprocessed/testset/search.test.json
 ```
 The results corresponding to each model saved is under `infer` folder, and the evaluation metrics is logged into the infer log files under `log`.
 
-Note if you want to infer a 'yesno' model, please sepecify a inferred result of a RC model, i.e. 'bidaf' or 'mlstm', under 'models/SOME_RC_MODEL/infer/', to --testset, because the 'yesno' model need the result answer of a RC model as its input.
+Note if you want to infer a 'yesno' model, please sepecify an inferred result of a RC model, i.e. 'bidaf' or 'mlstm', under `models/SOME_RC_MODEL/infer/`, to `--testset`, because the 'yesno' model need the result answer of a RC model as its input.
 
 #### Test result submission
 You can infer and evaluate your models on development data set locally by following the above steps, once you've developed a model that works to your expectation on the dev set, we highly recommend you to submit your inference result on the released test set to us to evaluate. To get inference file on test set:
