@@ -46,7 +46,7 @@ python utils/get_vocab.py --files data/demo/trainset/search.train.json data/demo
 ```
 
 #### Environment Requirements
-For now we only tested on PaddlePaddle v0.10.0, to install PaddlePaddle and for more details about PaddlePaddle, see [PaddlePaddle Homepage](http://paddlepaddle.org).
+For now we've only tested on PaddlePaddle v0.10.5, to install PaddlePaddle and for more details about PaddlePaddle, see [PaddlePaddle Homepage](http://paddlepaddle.org).
 
 #### Training
 We implement 3 models with PaddlePaddle: Match-LSTM, BiDAF, and a classification model for data with `query_type='YES_NO'`, the model simply replaces the Pointer-Net on top of Match-LSTM model with a one-layered classifier. The 3 implemented models can all be trained and inferred by run `run.py`, to specify the model to train or to infer, use `--algo [mlstm|bidaf|yesno]`, for complete usage run `python run.py -h`.
