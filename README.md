@@ -89,7 +89,7 @@ We also implements the BIDAF and Match-LSTM models based on Tensorflow 1.0. You 
 Before training the model, we have to make sure that the data is ready. For preparation, we will check the data files, make directories and extract a vocabulary for later use. You can run the following command to do this with a specified task name:
 
 ```
-python run.py --prepare --task zhidao
+python run.py --prepare
 ```
 You can specify the files for train/dev/test by setting the `train_files`/`dev_files`/`test_files`. By default, we use the data in `data/demo/`
 

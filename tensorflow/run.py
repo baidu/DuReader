@@ -80,12 +80,13 @@ def parse_args():
 
     path_settings = parser.add_argument_group('path settings')
     path_settings.add_argument('--train_files', nargs='+',
-                               default=['../data/demo/search.train.json'],
+                               default=['../data/demo/trainset/search.train.json'],
                                help='list of files that contains preprocessed train data')
     path_settings.add_argument('--dev_files', nargs='+',
-                               default=['../data/demo/search.dev.json'],
+                               default=['../data/demo/devset/search.dev.json'],
                                help='list of files that contains preprocessed dev data')
-    path_settings.add_argument('--test_files', nargs='+', default=[],
+    path_settings.add_argument('--test_files', nargs='+',
+                               default=['../data/demo/testset/search.test.json'],
                                help='list of files that contains preprocessed test data')
     path_settings.add_argument('--brc_dir', default='../data/baidu',
                                help='the dir with preprocessed baidu reading comprehension data')
@@ -109,7 +110,7 @@ def prepare(args):
     logger = logging.getLogger("brc")
     logger.info('Checking the data files...')
     for data_path in args.train_files + args.dev_files + args.test_files:
-        assert os.path.exists(data_path), '{} file does not exist.'
+        assert os.path.exists(data_path), '{} file does not exist.'.format(data_path)
     logger.info('Preparing the directories...')
     for dir_path in [args.vocab_dir, args.model_dir, args.result_dir, args.summary_dir]:
         if not os.path.exists(dir_path):
