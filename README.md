@@ -91,13 +91,13 @@ Before training the model, we have to make sure that the data is ready. For prep
 ```
 python run.py --prepare --task zhidao
 ```
-You can choose which dataset to use by set the `--task` as `search`, `zhidao` or `both`.
+You can specify the files for train/dev/test by setting the `train_files`/`dev_files`/`test_files`. By default, we use the data in `data/demo/`
 
 #### Training
-To train the reading comprehension model, you can specify the model type by using `--algo [BIDAF|MLSTM]` and you can also set the hyper-parameters such as the learning rate by using `--learning_rate NUM`. For example, to train a BIDAF model on Zhidao Dataset for 10 epochs, you can run:
+To train the reading comprehension model, you can specify the model type by using `--algo [BIDAF|MLSTM]` and you can also set the hyper-parameters such as the learning rate by using `--learning_rate NUM`. For example, to train a BIDAF model for 10 epochs, you can run:
 
 ```
-python run.py --task zhidao --algo BIDAF --epochs 10
+python run.py --train --algo BIDAF --epochs 10
 ```
 
 The training process includes an evaluation on the dev set after each training epoch. By default, the model with the least Bleu-4 score on the dev set will be saved.
@@ -106,18 +106,17 @@ The training process includes an evaluation on the dev set after each training e
 To conduct a single evaluation on the dev set with the the model already trained, you can run the following command:
 
 ```
-python run.py --evaluate --task zhidao
+python run.py --evaluate --algo BIDAF
 ```
 
 #### Prediction
-You can predict answers for the samples in dev set and test set using the following command:
+You can also predict answers for the samples in some files using the following command:
 
 ```
-python run.py --predict --task zhidao
+python run.py --predict --algo BIDAF --test_files ../data/demo/search.dev.json
 ```
 
 By default, the results are saved at `../data/results/` folder. You can change this by specifying `--result_dir DIR_PATH`.
-
 
 ## Copyright and License
 Copyright 2017 Baidu.com, Inc. All Rights Reserved
