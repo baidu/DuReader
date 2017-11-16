@@ -45,20 +45,21 @@ mkdir -p $log_dir
 
 
 emb_dim=100
-vocab_size=200000
+vocab_size=10000
 
 train() {
     cp *.py $env_dir/
     PYTHONPATH=$PWD:$ROOT CUDA_VISIBLE_DEVICES=0 python $env_dir/run.py \
         --trainset ../data/demo/trainset/search.train.json \
         --testset ../data/demo/devset/search.dev.json \
-        --vocab_file ../data/vocab.search \
+        --vocab_file ../data/demo/vocab.search \
         --emb_dim $emb_dim \
         --batch_size 32 \
         --vocab_size $vocab_size \
         --trainer_count 1 \
         --log_period 10 \
         --test_period 100 \
+        --num_passes 2 \
         --use_gpu \
         --save_dir $model_dir \
         --algo $algo \
@@ -69,7 +70,7 @@ train() {
 infer() {
     model_name=`basename $2`
     PYTHONPATH=$PWD:$ROOT CUDA_VISIBLE_DEVICES=0 python $env_dir/run.py \
-        --vocab_file ../data/vocab.search \
+        --vocab_file ../data/demo/vocab.search \
         --emb_dim $emb_dim \
         --batch_size 32 \
         --vocab_size $vocab_size \
