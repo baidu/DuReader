@@ -17,11 +17,11 @@ cd data && bash download.sh
 ```
 For more details about DuReader dataset please refer to [DuReader Homepage](https://ai.baidu.com//broad/subordinate?dataset=dureader).
 ### Preprocess the Data
-After the dataset is downloaded, there is still some work to do to run the baseline systems. DuReader dataset offers rich amount of documents for every user question, the documents are too long for popular RC models to cope with. In our baseline models, we preprocess the train set and development set data by selecting the paragraph that is most related to the answer string, while for inferring(no available golden answer), we select the paragraph that is most related to the question string. The preprocessing strategy is implemented in `utils/preprocess.py`. To preprocess the raw data, run:
+After the dataset is downloaded, there is still some work to do to run the baseline systems. DuReader dataset offers rich amount of documents for every user question, the documents are too long for popular RC models to cope with. In our baseline models, we preprocess the train set and development set data by selecting the paragraph that is most related to the answer string, while for inferring(no available golden answer), we select the paragraph that is most related to the question string. The preprocessing strategy is implemented in `utils/preprocess.py`. To preprocess the raw data, you should first segment 'question', 'title', 'paragraphs' and then store the segemented result into 'segmented_question', 'segmented_title', 'segmented_paragraphs' like the downloaded preprocessed data, then run:
 ```
 cat data/raw/trainset/search.train.json | python utils/preprocess.py > data/preprocessed/trainset/search.train.json
 ```
-The preprocessing is already included in `data/download.sh`, the preprocessed data is stored in `data/preprocess`, the downloaded raw data is under `data/raw`.
+The preprocessed data can be automatically downloaded by `data/download.sh`, and is stored in `data/preprocessed`, the raw data before preprocessing is under `data/raw`.
 
 Once the preprocessed data is ready, you can run `utils/get_vocab.py` to generate the vocabulary file, for example, if you want to train model with Baidu Search data:
 ```
@@ -59,7 +59,9 @@ models
     ├── log
     └── models
 ```
-For training, all scripts the experiment uses will first be copied to `env`, and then run from there, and inference process is also run from `env`. `infer` folder keeps the result file created by inference, `log` folder keeps training and inference logs, and `models` folder keeps the models saved during training. 
+For training, all scripts the experiment uses will first be copied to `env`, and then run from there, and inference process is also run from `env`. `infer` folder keeps the result file created by inference, `log` folder keeps training and inference logs, and `models` folder keeps the models saved during training.
+
+*Because the our datatset and the model capacity is very large, if it's out of your device's capacity to successfully run the whole process, you can try with the shipped demo data, just modifiy the '--trainset', '--testset' to demo data, and the modify 'emb_dim' to a smaller size.*
 
 #### Inference
 To infer a trained model, run the same command as training and change `train` to `infer`,  and add `--testset <path_to_testset>` argument. for example, suppose the 'test_bidaf' experiment is successfully trained,  to infer the saved models, run:
