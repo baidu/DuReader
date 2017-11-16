@@ -44,14 +44,14 @@ mkdir -p $infer_dir
 mkdir -p $log_dir
 
 
-emb_dim=300
+emb_dim=100
 vocab_size=200000
 
 train() {
     cp *.py $env_dir/
     PYTHONPATH=$PWD:$ROOT CUDA_VISIBLE_DEVICES=0 python $env_dir/run.py \
-        --trainset ../data/preprocessed/trainset/search.train.json \
-        --testset ../data/preprocessed/devset/search.dev.json \
+        --trainset ../data/demo/trainset/search.train.json \
+        --testset ../data/demo/devset/search.dev.json \
         --vocab_file ../data/vocab.search \
         --emb_dim $emb_dim \
         --batch_size 32 \
@@ -88,6 +88,7 @@ dir_infer() {
         infer --model_file $model_file $@
     done
 }
+
 
 if [ $job == "train" ]; then
     train $@

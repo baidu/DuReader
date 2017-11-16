@@ -61,7 +61,7 @@ models
 ```
 For training, all scripts the experiment uses will first be copied to `env`, and then run from there, and inference process is also run from `env`. `infer` folder keeps the result file created by inference, `log` folder keeps training and inference logs, and `models` folder keeps the models saved during training.
 
-*Because the our datatset and the model capacity is very large, if it's out of your device's capacity to successfully run the whole process, you can try with the shipped demo data, just modifiy the '--trainset', '--testset' to demo data, and the modify 'emb_dim' to a smaller size.*
+*Because our datatset and the model capacity is very large, if it's out of your device's capacity to successfully run the whole process, you can try with the shipped demo data, just use `run_demo.sh` for training and inferring,the usage is the same as `run.sh`*
 
 #### Inference
 To infer a trained model, run the same command as training and change `train` to `infer`,  and add `--testset <path_to_testset>` argument. for example, suppose the 'test_bidaf' experiment is successfully trained,  to infer the saved models, run:
@@ -69,6 +69,9 @@ To infer a trained model, run the same command as training and change `train` to
 bash run.sh test_bidaf bidaf infer --testset ../data/preprocessed/search.test.json
 ```
 The results corresponding to each model saved is under `infer` folder, and the evaluation metrics is logged into the infer log files under `log`.
+
+Note if you want to infer a 'yesno' model, please sepecify a inferred result of a RC model, i.e. 'bidaf' or 'mlstm', under 'models/SOME_RC_MODEL/infer/', to --testset, because the 'yesno' model need the result answer of a RC model as its input.
+
 #### Test result submission
 You can infer and evaluate your models on development data set locally by following the above steps, once you've developed a model that works to your expectation on the dev set, we highly recommend you to submit your inference result on the released test set to us to evaluate. To get inference file on test set:
 
