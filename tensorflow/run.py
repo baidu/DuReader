@@ -47,6 +47,8 @@ def parse_args():
                         help='predict the answers for test set with trained model')
     parser.add_argument('--gpu', type=str, default='0',
                         help='specify gpu device')
+    parser.add_argument('--ktq', action='store_true', default=False,
+                        help='specify whether running on ktqueue')
 
     train_settings = parser.add_argument_group('train settings')
     train_settings.add_argument('--optim', default='adam',
@@ -80,13 +82,13 @@ def parse_args():
 
     path_settings = parser.add_argument_group('path settings')
     path_settings.add_argument('--train_files', nargs='+',
-                               default=['./data/preprocessed/trainset/search.train.json'],
+                               default=['/ssd/DuReader_dataset/preprocessed/trainset/search.train.json'],
                                help='list of files that contain the preprocessed train data')
     path_settings.add_argument('--dev_files', nargs='+',
-                               default=['./data/preprocessed/devset/search.dev.json'],
+                               default=['/ssd/DuReader_dataset/preprocessed/devset/search.dev.json'],
                                help='list of files that contain the preprocessed dev data')
     path_settings.add_argument('--test_files', nargs='+',
-                               default=['./data/preprocessed/testset/search.test.json'],
+                               default=['/ssd/DuReader_dataset//preprocessed/testset/search.test.json'],
                                help='list of files that contain the preprocessed test data')
     path_settings.add_argument('--brc_dir', default='./data/baidu',
                                help='the dir with preprocessed baidu reading comprehension data')
@@ -100,6 +102,8 @@ def parse_args():
                                help='the dir to write tensorboard summary')
     path_settings.add_argument('--log_path',
                                help='path of the log file. If not set, logs are printed to console')
+    path_settings.add_argument('--work_dir', default='',
+                               help='the dir for ktqueue')
     return parser.parse_args()
 
 
@@ -108,6 +112,15 @@ def prepare(args):
     checks data, creates the directories, prepare the vocabulary and embeddings
     """
     logger = logging.getLogger("brc")
+    if args.ktq:
+        logger.info('Running on ktq')
+        if not args.work_dir:
+            raise ValueError('work_dir must be set!')
+            exit(-1)
+        args.vocab_dir = os.path.join(args.work_dir, 'vocab')
+        args.model_dir = os.path.join(args.work_dir, 'models')
+        args.result_dir = os.path.join(args.work_dir, 'results')
+        args.summary_dir = os.path.join(args.work_dir, 'summary')
     logger.info('Checking the data files...')
     for data_path in args.train_files + args.dev_files + args.test_files:
         assert os.path.exists(data_path), '{} file does not exist.'.format(data_path)
