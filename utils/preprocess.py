@@ -19,8 +19,8 @@ This module finds the most related paragraph of each document according to recal
 """
 
 import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
+import imp
+imp.reload(sys)
 import json
 from collections import Counter
 
