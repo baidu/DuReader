@@ -17,10 +17,10 @@
 """
 This module prepares and runs the whole system.
 """
-
 import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
+if sys.version[0] == '2':
+    reload(sys)
+    sys.setdefaultencoding("utf-8")
 sys.path.append('..')
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"

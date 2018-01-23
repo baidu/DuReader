@@ -25,8 +25,8 @@ import sys
 import zipfile
 
 from collections import Counter
-from bleu_metric.bleu import Bleu
-from rouge_metric.rouge import Rouge
+from .bleu_metric.bleu import Bleu
+from .rouge_metric.rouge import Rouge
 
 EMPTY = ''
 YESNO_LABELS = set(['Yes', 'No', 'Depends'])
@@ -529,9 +529,9 @@ def main(args):
     except AssertionError as ae:
         err = ae
 
-    print json.dumps(
+    print(json.dumps(
             format_metrics(metrics, args.task, err),
-            ensure_ascii=False).encode('utf8')
+            ensure_ascii=False).encode('utf8'))
 
 
 if __name__ == '__main__':
