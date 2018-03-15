@@ -123,7 +123,7 @@ python run.py --evaluate --algo BIDAF
 You can also predict answers for the samples in some files using the following command:
 
 ```
-python run.py --predict --algo BIDAF --test_files ../data/demo/search.dev.json
+python run.py --predict --algo BIDAF --test_files ../data/demo/devset/search.dev.json 
 ```
 
 By default, the results are saved at `../data/results/` folder. You can change this by specifying `--result_dir DIR_PATH`.
