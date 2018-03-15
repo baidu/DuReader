@@ -42,3 +42,7 @@ download "rouge_metric" ${rouge_base_url} ${rouge_files[@]}
 
 # prepare bleu
 download "bleu_metric" ${bleu_base_url} ${bleu_files[@]}
+
+# convert python 2.x source code to python 3.x
+2to3 -w "../utils/bleu_metric/bleu_scorer.py"
+2to3 -w "../utils/bleu_metric/bleu.py"
