@@ -128,6 +128,19 @@ python run.py --predict --algo BIDAF --test_files ../data/demo/devset/search.dev
 
 By default, the results are saved at `../data/results/` folder. You can change this by specifying `--result_dir DIR_PATH`.
 
+## Run baseline systems on multilingual datasets
+
+To help evaluate the system performance on multilingual datasets, we provide scripts to convert MS MARCO V2 data from its format to DuReader format. 
+
+[MS MARCO](http://www.msmarco.org/dataset.aspx) (Microsoft Machine Reading Comprehension) is an English dataset focused on machine reading comprehension and question answering. The design of MS MARCO and DuReader is similiar. It is worthwhile examining the MRC systems on both Chinese (DuReader) and English (MS MARCO) datasets. 
+
+You can download MS MARCO V2 data, and run the following scripts to convert the data from MS MARCO V2 format to DuReader format. Then, you can run and evaluate our DuReader baselines or your DuReader systems on MS MARCO data. 
+
+```
+./run_marco2dureader_preprocess.sh ../data/marco/train_v2.1.json ../data/marco/train_v2.1_dureaderformat.json
+./run_marco2dureader_preprocess.sh ../data/marco/dev_v2.1.json ../data/marco/dev_v2.1_dureaderformat.json
+```
+
 ## Copyright and License
 Copyright 2017 Baidu.com, Inc. All Rights Reserved
 
