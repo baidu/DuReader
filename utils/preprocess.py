@@ -104,7 +104,7 @@ def metric_max_over_ground_truths(metric_fn, prediction, ground_truths):
 
 def find_best_question_match(doc, question, with_score=False):
     """
-    For each docment, find the paragraph that matches best to the question.
+    For each document, find the paragraph that matches best to the question.
     Args:
         doc: The document object.
         question: The question tokens.
