@@ -80,7 +80,7 @@ bash run.sh test_bidaf bidaf infer --testset ../data/preprocessed/testset/search
 ```
 The results corresponding to each model saved is under `infer` folder, and the evaluation metrics is logged into the infer log files under `log`.
 
-Note if you want to infer a 'yesno' model, please sepecify an inferred result of a RC model, i.e. 'bidaf' or 'mlstm', under `models/SOME_RC_MODEL/infer/`, to `--testset`, because the 'yesno' model need the result answer of a RC model as its input.
+Note if you want to infer a 'yesno' model, please specify an inferred result of a RC model, i.e. 'bidaf' or 'mlstm', under `models/SOME_RC_MODEL/infer/`, to `--testset`, because the 'yesno' model need the result answer of a RC model as its input.
 
 #### Test result submission
 You can infer and evaluate your models on development data set locally by following the above steps, once you've developed a model that works to your expectation on the dev set, we highly recommend you to submit your inference result on the released test set to us to evaluate. To get inference file on test set:
@@ -132,7 +132,7 @@ By default, the results are saved at `../data/results/` folder. You can change t
 
 To help evaluate the system performance on multilingual datasets, we provide scripts to convert MS MARCO V2 data from its format to DuReader format. 
 
-[MS MARCO](http://www.msmarco.org/dataset.aspx) (Microsoft Machine Reading Comprehension) is an English dataset focused on machine reading comprehension and question answering. The design of MS MARCO and DuReader is similiar. It is worthwhile examining the MRC systems on both Chinese (DuReader) and English (MS MARCO) datasets. 
+[MS MARCO](http://www.msmarco.org/dataset.aspx) (Microsoft Machine Reading Comprehension) is an English dataset focused on machine reading comprehension and question answering. The design of MS MARCO and DuReader is similar. It is worthwhile examining the MRC systems on both Chinese (DuReader) and English (MS MARCO) datasets. 
 
 You can download MS MARCO V2 data, and run the following scripts to convert the data from MS MARCO V2 format to DuReader format. Then, you can run and evaluate our DuReader baselines or your DuReader systems on MS MARCO data. 
 
