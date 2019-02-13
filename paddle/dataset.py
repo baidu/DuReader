@@ -15,364 +15,230 @@
 # limitations under the License.
 # ==============================================================================
 """
-Implements data parsers for different tasks on DuReader dataset.
+This module implements data process strategies.
 """
 
-import copy
-import itertools
-import logging
+import os
 import json
+import logging
 import numpy as np
-import random
-import sys
-import paddle.v2 as paddle
-
-from utils import find_best_question_match
-
-logger = logging.getLogger("paddle")
-logger.setLevel(logging.INFO)
+from collections import Counter
+import io
 
 
-class Dataset(object):
+class BRCDataset(object):
     """
-    Base dataset class for various tasks.
+    This module implements the APIs for loading and using baidu reading comprehension dataset
     """
+
     def __init__(self,
-                 file_names=None,
-                 vocab_file=None,
-                 vocab_size=0,
-                 shuffle=False,
-                 selected=-1,
-                 preload=True,
-                 append_raw=False,
-                 is_infer=False,
-                 max_p_len=500):
-        self.file_names = file_names
-        self.data = []
-        self.raw = []
-        self.vocab = self.read_vocab(vocab_file, vocab_size) \
-                        if vocab_file else {}
-        self.shuffle = shuffle
-        self.selected = selected
-        self.unk_id = 0
-        self.preload = preload
+                 max_p_num,
+                 max_p_len,
+                 max_q_len,
+                 train_files=[],
+                 dev_files=[],
+                 test_files=[]):
+        self.logger = logging.getLogger("brc")
+        self.max_p_num = max_p_num
         self.max_p_len = max_p_len
-        self.append_raw = append_raw
-        self.is_infer = is_infer
-        self.doc_num = 5
-        if preload:
-            logger.info('Preloading data...')
-            self.load()
-            logger.info('Done, data[{}]'.format(len(self.data)))
+        self.max_q_len = max_q_len
 
-    def load(self):
-        """
-        Loads all data records into self.data.
-        """
-        self.data = []
-        for file_name in self.file_names:
-            with open(file_name, 'r') as src:
-                for line in src:
-                    self.data += self.parse(line.strip())
-        if self.shuffle:
-            logger.info('Shuffling data...')
-            random.shuffle(self.data)
-        if self.selected > 0:
-            self.data = self.data[:self.selected]
+        self.train_set, self.dev_set, self.test_set = [], [], []
+        if train_files:
+            for train_file in train_files:
+                self.train_set += self._load_dataset(train_file, train=True)
+            self.logger.info('Train set size: {} questions.'.format(
+                len(self.train_set)))
 
-    def read_vocab(self, vocab_file, vocab_size):
-        """
-        Builds vocabulary dictionary.
+        if dev_files:
+            for dev_file in dev_files:
+                self.dev_set += self._load_dataset(dev_file)
+            self.logger.info('Dev set size: {} questions.'.format(
+                len(self.dev_set)))
 
+        if test_files:
+            for test_file in test_files:
+                self.test_set += self._load_dataset(test_file)
+            self.logger.info('Test set size: {} questions.'.format(
+                len(self.test_set)))
+
+    def _load_dataset(self, data_path, train=False):
+        """
+        Loads the dataset
         Args:
-            vocab_file: file name of the vocabulary file, vocabulary file
-                        should contain 2 columns separated by tab. The 1st
-                        column is token, the 2nd is the count of the token
-                        in the dataset.
-            vocab_size: An integer indicates size of the vocabulary dictionary,
-                        the size includes UNK.
-        Returns:
-            A dictionary mapping a token to a index. The size of the returned
-            dictionary is vocab_size - 1, because UNK is not in the dict,
-            the index of UNK is 0, if a token is not in this dict, it will be
-            assigned to index 0. Tokens in this dict are indexed from 1.
+            data_path: the data file to load
         """
-        vocab = {}
-        with open(vocab_file, 'r') as vf:
-            ln_cnt = 1
-            for line in vf:
-                if vocab_size > 0 and ln_cnt > vocab_size - 1:
-                    break
-                line = unicode(line, encoding='utf8')
-                w, c = line.split('\t')
-                vocab[w] = ln_cnt
-                ln_cnt += 1
+        with io.open(data_path, 'r', encoding='utf-8') as fin:
+            data_set = []
+            for lidx, line in enumerate(fin):
+                sample = json.loads(line.strip())
+                if train:
+                    if len(sample['answer_spans']) == 0:
+                        continue
+                    if sample['answer_spans'][0][1] >= self.max_p_len:
+                        continue
 
-        # unk is not in vocab dict. but is counted in the vocab_size
-        assert len(vocab) == vocab_size - 1, \
-                "{} vs {}".format(len(vocab), vocab_size)
-        logger.info('vocab size: {}'.format(len(vocab) + 1))
-        return vocab
+                if 'answer_docs' in sample:
+                    sample['answer_passages'] = sample['answer_docs']
 
-    def parse(self, line):
+                sample['question_tokens'] = sample['segmented_question']
+
+                sample['passages'] = []
+                for d_idx, doc in enumerate(sample['documents']):
+                    if train:
+                        most_related_para = doc['most_related_para']
+                        sample['passages'].append({
+                            'passage_tokens':
+                            doc['segmented_paragraphs'][most_related_para],
+                            'is_selected': doc['is_selected']
+                        })
+                    else:
+                        para_infos = []
+                        for para_tokens in doc['segmented_paragraphs']:
+                            question_tokens = sample['segmented_question']
+                            common_with_question = Counter(
+                                para_tokens) & Counter(question_tokens)
+                            correct_preds = sum(common_with_question.values())
+                            if correct_preds == 0:
+                                recall_wrt_question = 0
+                            else:
+                                recall_wrt_question = float(
+                                    correct_preds) / len(question_tokens)
+                            para_infos.append((para_tokens, recall_wrt_question,
+                                               len(para_tokens)))
+                        para_infos.sort(key=lambda x: (-x[1], x[2]))
+                        fake_passage_tokens = []
+                        for para_info in para_infos[:1]:
+                            fake_passage_tokens += para_info[0]
+                        sample['passages'].append({
+                            'passage_tokens': fake_passage_tokens
+                        })
+                data_set.append(sample)
+        return data_set
+
+    def _one_mini_batch(self, data, indices, pad_id):
         """
-        Implements parser for specific task, parses one line and returns a
-        record as described by self.schema.
-        """
-        raise NotImplementedError
-
-    def create_reader(self):
-        """
-        Creates reader generator.
-
-        Returns:
-            A generator, which yields one data record once.
-        """
-        def _reader_preload():
-            if self.shuffle:
-                logger.info('shuffling data ...')
-                random.shuffle(self.data)
-            for line in self.data:
-                if not line:
-                    logger.info("skip empty line: {}".format(line))
-                    continue
-                yield line
-
-        def _reader_stream():
-            for file_name in self.file_names:
-                with open(file_name, 'r') as fn:
-                    for line in fn:
-                        data = self.parse(line.strip())
-                        if not data:
-                            continue
-                        for d in data:
-                            yield d
-
-        if not self.preload:
-            return _reader_stream
-        return _reader_preload
-
-
-class DuReaderYesNo(Dataset):
-    """
-    Implements parser for yesno task.
-    """
-    def __init__(self, *args, **kwargs):
-        self.labels = {'Yes': 0, 'No': 1, 'Depends': 2}
-        super(DuReaderYesNo, self).__init__(*args, **kwargs)
-        self.schema = ['q_ids', 'a_ids', 'label']
-        self.feeding = {name: i for i, name in enumerate(self.schema)}
-        if self.is_infer:
-            assert self.shuffle == False, 'Shuffling is forbidden for inference'
-
-    def _get_id(self, s):
-        s_ids = []
-        if not isinstance(s, list):
-            s = s.split(' ')
-        for t in s:
-            s_ids.append(self.vocab.get(t, self.unk_id))
-        return s_ids
-
-    def parse_train(self, line):
-        """
-        Parses one line for training.
-
+        Get one mini batch
         Args:
-            line: A legal json string.
-
+            data: all data
+            indices: the indices of the samples to be selected
+            pad_id:
         Returns:
-            A record as self.schema describes.
+            one batch of data
         """
-
-        obj = json.loads(line.strip())
-        ret = []
-        if obj['question_type'] != 'YES_NO':
-            return ret
-        label_ids = [self.labels[l] for l in obj['yesno_answers']]
-        question = [
-                self.vocab.get(x, self.unk_id)
-                for x in obj['segmented_question']]
-        paras = map(self._get_id, obj['segmented_answers'])
-
-        if not question or not paras:
-            return ret
-        for para, lbl in zip(paras, label_ids):
-            ret.append((question, para, lbl))
-        return ret
-
-    def parse_infer(self, line):
-        """
-        Parses one line for inferring.
-
-        Args:
-            line: A legal json string.
-
-        Returns:
-            A record as self.schema describes.
-        """
-        obj = json.loads(line.strip())
-        ret = []
-        paras = map(self._get_id, obj['answers'])
-        question = [self.vocab.get(x, self.unk_id) for x in obj['question']]
-        fake_label = 0
-        for idx, para in enumerate(paras):
-            info = copy.deepcopy(obj)
-            info['answer_idx'] = idx
-            info['yesno_answers_ref'] = info['yesno_answers_ref']
-            info['yesno_answers'] = []
-            ret.append((question, para, fake_label, info))
-        return ret
-
-    def parse(self, line):
-        """
-        Parses one line for inferring.
-
-        Args:
-            line: A legal json string.
-
-        Returns:
-            A record as self.schema describes.
-        """
-        if self.is_infer:
-            return self.parse_infer(line)
-        return self.parse_train(line)
-
-
-class DuReaderQA(Dataset):
-    """
-    Implements parser for QA task.
-    """
-    def __init__(self, *args, **kwargs):
-        super(DuReaderQA, self).__init__(*args, **kwargs)
-        doc_names = ['doc' + str(i) for i in range(self.doc_num)]
-        start_label_names = ['start_pos' + str(i) for i in range(self.doc_num)]
-        end_label_names = ['end_pos' + str(i) for i in range(self.doc_num)]
-        doc_len_names = ['len' + str(i) for i in range(self.doc_num)]
-
-        self.schema = ['q_ids'] \
-                      + doc_names \
-                      + doc_len_names \
-                      + start_label_names \
-                      + end_label_names
-
-        self.feeding = {name: i for i, name in enumerate(self.schema)}
-
-    def _find_ans_span(self, question_tokens, span, answer_docs, docs):
-        assert len(span) == 1, 'Multiple spans: {}'.format(span)
-        assert len(answer_docs) == 1, \
-                'Multiple answer docs: {}'.format(answer_docs)
-        selected_paras = []
-        answer_docs = set(answer_docs)
-        para_tokens = []
-        for i, doc in enumerate(docs):
-            if not self.is_infer:
-                para_idx = doc['most_related_para']
+        batch_data = {
+            'raw_data': [data[i] for i in indices],
+            'question_token_ids': [],
+            'question_length': [],
+            'passage_token_ids': [],
+            'passage_length': [],
+            'start_id': [],
+            'end_id': [],
+            'passage_num': []
+        }
+        max_passage_num = max(
+            [len(sample['passages']) for sample in batch_data['raw_data']])
+        max_passage_num = min(self.max_p_num, max_passage_num)
+        for sidx, sample in enumerate(batch_data['raw_data']):
+            count = 0
+            for pidx in range(max_passage_num):
+                if pidx < len(sample['passages']):
+                    count += 1
+                    batch_data['question_token_ids'].append(sample[
+                        'question_token_ids'][0:self.max_q_len])
+                    batch_data['question_length'].append(
+                        min(len(sample['question_token_ids']), self.max_q_len))
+                    passage_token_ids = sample['passages'][pidx][
+                        'passage_token_ids'][0:self.max_p_len]
+                    batch_data['passage_token_ids'].append(passage_token_ids)
+                    batch_data['passage_length'].append(
+                        min(len(passage_token_ids), self.max_p_len))
+            # record the start passage index of current sample
+            passade_idx_offset = sum(batch_data['passage_num'])
+            batch_data['passage_num'].append(count)
+            gold_passage_offset = 0
+            if 'answer_passages' in sample and len(sample['answer_passages']) and \
+                    sample['answer_passages'][0] < len(sample['documents']):
+                for i in range(sample['answer_passages'][0]):
+                    gold_passage_offset += len(batch_data['passage_token_ids'][
+                        passade_idx_offset + i])
+                start_id = min(sample['answer_spans'][0][0], self.max_p_len)
+                end_id = min(sample['answer_spans'][0][1], self.max_p_len)
+                batch_data['start_id'].append(gold_passage_offset + start_id)
+                batch_data['end_id'].append(gold_passage_offset + end_id)
             else:
-                para_idx = find_best_question_match(doc, question_tokens)
-            para = doc['segmented_paragraphs'][para_idx]
-            if len(para) == 0:
-                continue
-            ans_span = (-1, -1)
-            if i in answer_docs:
-                ans_span = span[0]
-            if len(para) > self.max_p_len:
-                para = para[:self.max_p_len]
-            s, e = ans_span
-            if s >= len(para):
-                logger.info('Skip span out of para length.')
-                continue
-            e = min(len(para) - 1, e)
-            ans_span = (s, e)
-            para_ids = [self.vocab.get(x, self.unk_id) for x in para]
-            selected_paras.append((para_ids, ans_span))
-            para_tokens.append(para)
-        return selected_paras, para_tokens
+                # fake span for some samples, only valid for testing
+                batch_data['start_id'].append(0)
+                batch_data['end_id'].append(0)
+        return batch_data
 
-    def _make_sample(self, question_ids, para_infos):
-        def _get_label(idx, ref):
-            ret = [0.0] * len(ref)
-            if idx > 0:
-                ret[idx] = 1.0
-            return [[x] for x in ret]
-
-        paras, start_labels, end_labels, para_lens = [], [], [], []
-        default_para_info = ([0], (-1, -1))
-        selected = para_infos[:self.doc_num]
-        if len(selected) < self.doc_num:
-            selected += [default_para_info] * (self.doc_num - len(selected))
-        for para_ids, ans_span in selected:
-            s, e = ans_span
-            start_label = _get_label(s, para_ids)
-            end_label = _get_label(e, para_ids)
-            paras.append(para_ids)
-            start_labels.append(start_label)
-            end_labels.append(end_label)
-            para_lens.append([[len(para_ids)]])
-        sample = [question_ids] + paras + para_lens + start_labels + end_labels
-        return sample
-
-    def _get_infer_info(self, obj, paras):
-        info = {}
-        info['tokens'] = list(itertools.chain(*paras))
-        info['answers'] = []
-        info['answers_ref'] = obj.get('segmented_answers', [])
-        info['question'] = obj['segmented_question']
-        info['question_id'] = obj['question_id']
-        info['question_type'] = obj['question_type']
-        info['yesno_answers'] = []
-        info['yesno_answers_ref'] = obj.get('yesno_answers', [])
-        info['entity_answers'] = [[]]
-        info['entity_answers_ref'] = obj.get('entity_answers', [[]])
-        return info
-
-    def parse(self, line):
+    def word_iter(self, set_name=None):
         """
-        Parses one line.
-
+        Iterates over all the words in the dataset
         Args:
-            line: A legal json string.
-
+            set_name: if it is set, then the specific set will be used
         Returns:
-            A record as self.schema describes.
+            a generator
         """
-        ret = []
-        obj = json.loads(line)
-        if len(obj['answer_docs']) != 1:
-            logger.info('skip, wrong answer docs')
-            return ret
-        if obj['answer_docs'][0] > 5:
-            logger.info('skip, answer doc out of range.')
-            return ret
-        q_ids = [self.vocab.get(x, self.unk_id) for x in obj['segmented_question']]
-        if len(q_ids) == 0:
-            return ret
-        selected_paras, para_tokens = self._find_ans_span(
-                obj['segmented_question'],
-                obj['answer_spans'],
-                obj['answer_docs'],
-                obj['documents'])
-        if not selected_paras:
-            return ret
-        sample = self._make_sample(q_ids, selected_paras)
-        if self.is_infer:
-            sample.append(self._get_infer_info(obj, para_tokens))
-        ret.append(sample)
-        return ret
+        if set_name is None:
+            data_set = self.train_set + self.dev_set + self.test_set
+        elif set_name == 'train':
+            data_set = self.train_set
+        elif set_name == 'dev':
+            data_set = self.dev_set
+        elif set_name == 'test':
+            data_set = self.test_set
+        else:
+            raise NotImplementedError('No data set named as {}'.format(
+                set_name))
+        if data_set is not None:
+            for sample in data_set:
+                for token in sample['question_tokens']:
+                    yield token
+                for passage in sample['passages']:
+                    for token in passage['passage_tokens']:
+                        yield token
 
+    def convert_to_ids(self, vocab):
+        """
+        Convert the question and passage in the original dataset to ids
+        Args:
+            vocab: the vocabulary on this dataset
+        """
+        for data_set in [self.train_set, self.dev_set, self.test_set]:
+            if data_set is None:
+                continue
+            for sample in data_set:
+                sample['question_token_ids'] = vocab.convert_to_ids(sample[
+                    'question_tokens'])
+                for passage in sample['passages']:
+                    passage['passage_token_ids'] = vocab.convert_to_ids(passage[
+                        'passage_tokens'])
 
-if __name__ == '__main__':
-    data = sys.argv[1]
-    vocab = sys.argv[2]
-    dataset = DuReaderYesNo(file_names=data,
-            vocab_file=vocab,
-            preload=False,
-            max_p_len=300,
-            is_infer=False,
-            append_raw=False,
-            vocab_size=218967)
-
-    # test reader
-    reader = dataset.create_reader()
-    for r in reader():
-        print r
-
+    def gen_mini_batches(self, set_name, batch_size, pad_id, shuffle=True):
+        """
+        Generate data batches for a specific dataset (train/dev/test)
+        Args:
+            set_name: train/dev/test to indicate the set
+            batch_size: number of samples in one batch
+            pad_id: pad id
+            shuffle: if set to be true, the data is shuffled.
+        Returns:
+            a generator for all batches
+        """
+        if set_name == 'train':
+            data = self.train_set
+        elif set_name == 'dev':
+            data = self.dev_set
+        elif set_name == 'test':
+            data = self.test_set
+        else:
+            raise NotImplementedError('No data set named as {}'.format(
+                set_name))
+        data_size = len(data)
+        indices = np.arange(data_size)
+        if shuffle:
+            np.random.shuffle(indices)
+        for batch_start in np.arange(0, data_size, batch_size):
+            batch_indices = indices[batch_start:batch_start + batch_size]
+            yield self._one_mini_batch(data, batch_indices, pad_id)
