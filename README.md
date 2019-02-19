@@ -33,37 +33,55 @@ The preprocessed data can be automatically downloaded by `data/download.sh`, and
 
 ### Run PaddlePaddle
 
-We implement a upgraded BiDAF model with PaddlePaddle. The basic preparation, training, evaluation and inference processes have been wrapped in `run.sh`. One can start the process by running `run.sh` with specific commands. The basic usage is:
+We implement a BiDAF model with PaddlePaddle. Please note that we have an update on the PaddlePaddle baseline (Feb 25, 2019). The major updates have been noted in `paddle/updates.README`. On the dataset of DuReader, the PaddlePaddle baseline has better performance than the Tensorflow baseline. 
+
+The procedures of the paragraph extraction, vocabulary preparation, training, evaluation and inference have been wrapped in `run.sh`. One can start one procedure by running run.sh with specific arguments. The basic usage is:
 
 ```
 sh run.sh --PROCESS_NAME --OTHER_ARGS
 ```
-`PROCESS_NAME` can be one of `prepare`, `train`, `evaluate` and `predict` (see the process descriptions below for more details). `OTHER_ARGS ` config the mode with with specific arguments, which can be found in `args.py`. In the examples below, we use the demo dataset (under data/demo) by default.
+
+PROCESS\_NAME can be one of `para_extraction`, `prepare`, `train`, `evaluate` and `predict` (see the below detailed description for each procedure). OTHER\_ARGS are the specific arguments, which can be found in args.py. 
+
+In the examples below, we use the demo dataset (under data/demo) by default to demonstrate the usages of run.sh. 
 
 #### Environment Requirements
-For now we've only tested on PaddlePaddle v1.2 (Fluid), to install PaddlePaddle and for more details about PaddlePaddle, see [PaddlePaddle Homepage](http://paddlepaddle.org).
+Please note that we only tested the baseline on PaddlePaddle v1.2 (Fluid). To install PaddlePaddle, please see [PaddlePaddle Homepage](http://paddlepaddle.org) for more information.
+
+#### Paragraph Extraction
+A sophisticated paragraph extraction strategy can help improve the model performance. Please run the following command to do paragraph extraction:
+
+`sh run.sh --para_extraction`
+
+Please download the preprocessed data before running this command (see the "Preprocess the Data" section above). The results of paragraph extraction will be saved in `data/extracted/`.
 
 #### Preparation
 
-Before training the model, we have to make sure that the data is ready. For preparation, we will check the data files, make directories and extract a vocabulary for later use. You can run the following command to do this with a specified task name:
+Before training the model, you need to prepare the vocabulary for the dataset and create the folders that will be used for storing the models and the results. You can run the following command for the preparation:
 
 ```
 sh run.sh --prepare
 ```
-You can specify the files for train/dev/test by setting the `train_files`/`dev_files`/`test_files`. By default, we use the data in `data/demo/`
+The above command uses the data in `data/demo/` by default. To change the data folder, you need to specify the following arguments:
 
+`sh run.sh --prepare –-train_files ../data/extracted/train.json –-dev_files ../data/extracted/dev.json –-test_files ../data/extracted/test.json`
 
 #### Training
 
-To train a model, run:
+To train a model, please run the following command:
 
 ```
-sh run.sh --train
+sh run.sh --train --epoch 5
 ```
-This will start the training process. The trained model will be eluvated automatically after every epoch, and a folder named by the epoch ID will be created under data/models, in which the model parameters are saved. 
+This will start the training process with 5 epochs. The trained model will be evaluated automatically after each epoch, and a folder named by the epoch ID will be created under the folder data/models, in which the model parameters are saved. If you need to change the default hyper-parameters, e.g. initial learning rate and hidden size, please run the commands with the specific arguments. 
+
+`sh run.sh --train –-epoch 5 –-learning_rate 0.00001 –-hidden_size 100`
+
+More arguments can be found in args.py.
+
 
 #### Evaluate
-To evaluate a specific model, run:
+To evaluate a specific model, please run the following command:
 
 ```
 sh run.sh --evaluate  --load_dir YOUR_MODEL_DIR
@@ -71,22 +89,22 @@ sh run.sh --evaluate  --load_dir YOUR_MODEL_DIR
 The model under `YOUR_MODEL_DIR` (e.g. `../data/models/1`) will be loaded and evaluated.
 
 #### Inference
-To infer a trained model on the test dataset, run: 
+To do inference on the test dataset by using a trained model, please run: 
 
 ```
 sh run.sh --predict  --load_dir YOUR_MODEL_DIR 
 ```
-The predicted answers will be saved in `data/results`.
+The predicted answers will be saved in the folder `data/results`.
 
 
 
-#### Test result submission
-You can infer and evaluate your models on development data set locally by following the above steps, once you've developed a model that works to your expectation on the dev set, we highly recommend you to submit your inference result on the released test set to us to evaluate. To get inference file on test set:
+#### Submit the test results
+Once you train a model that is tuned on the dev set, we highly recommend you submit the predictions on test set to the site of DuReader for evaluation purpose. To get inference file on test set:
 
 1. make sure the training is over.
 2. select the best model under `data/models` according to the training log.
-3. infer with test set.
-4. [submit the infer result file](http://ai.baidu.com/broad/submission?dataset=dureader).
+3. predict the results on test set.
+4. [submit the prediction result file](http://ai.baidu.com/broad/submission?dataset=dureader).
 
 ### Run Tensorflow
 

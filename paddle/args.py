@@ -41,7 +41,7 @@ def parse_args():
     parser.add_argument(
         "--hidden_size",
         type=int,
-        default=300,
+        default=150,
         help="The size of rnn hidden unit. (default: %(default)d)")
     parser.add_argument(
         "--batch_size",
@@ -51,7 +51,7 @@ def parse_args():
     parser.add_argument(
         "--pass_num",
         type=int,
-        default=5,
+        default=10,
         help="The pass number to train. (default: %(default)d)")
     parser.add_argument(
         "--learning_rate",
@@ -71,7 +71,7 @@ def parse_args():
     parser.add_argument(
         "--save_dir",
         type=str,
-        default="model",
+        default="../data/models",
         help="Specify the path to save trained models.")
     parser.add_argument(
         "--load_dir",
@@ -93,18 +93,24 @@ def parse_args():
     parser.add_argument(
         "--dev_interval",
         type=int,
-        default=1000,
+        default=-1,
         help="cal dev loss every n batches."
         "(default: %(default)d)")
     parser.add_argument('--optim', default='adam', help='optimizer type')
-    parser.add_argument('--trainset', nargs='+', help='train dataset')
-    parser.add_argument('--devset', nargs='+', help='dev dataset')
-    parser.add_argument('--testset', nargs='+', help='test dataset')
-    parser.add_argument('--vocab_dir', help='dict')
+    parser.add_argument('--trainset', nargs='+',
+                        default=['../data/demo/trainset/search.train.json'],
+                        help='train dataset')
+    parser.add_argument('--devset', nargs='+',
+                        default=['../data/demo/devset/search.dev.json'],
+                        help='dev dataset')
+    parser.add_argument('--testset', nargs='+',
+                        default=['../data/demo/testset/search.test.json'],
+                        help='test dataset')
+    parser.add_argument('--vocab_dir', default='../data/vocab', help='vocabulary')
     parser.add_argument('--max_p_num', type=int, default=5)
     parser.add_argument('--max_a_len', type=int, default=200)
     parser.add_argument('--max_p_len', type=int, default=500)
-    parser.add_argument('--max_q_len', type=int, default=9)
+    parser.add_argument('--max_q_len', type=int, default=60)
     parser.add_argument('--doc_num', type=int, default=5)
     parser.add_argument('--para_print', action='store_true')
     parser.add_argument('--drop_rate', type=float, default=0.0)
