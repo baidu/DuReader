@@ -33,29 +33,29 @@ The preprocessed data can be automatically downloaded by `data/download.sh`, and
 
 ### Run PaddlePaddle
 
-We implement a BiDAF model with PaddlePaddle. Please note that we have an update on the PaddlePaddle baseline (Feb 25, 2019). The major updates have been noted in `paddle/updates.README`. On the dataset of DuReader, the PaddlePaddle baseline has better performance than the Tensorflow baseline. 
+We implement a BiDAF model with PaddlePaddle. Note that we have an update on the PaddlePaddle baseline (Feb 25, 2019). The major updates have been noted in `paddle/UPDATES.md`. On the dataset of DuReader, the PaddlePaddle baseline has better performance than our Tensorflow baseline. 
 
-The procedures of the paragraph extraction, vocabulary preparation, training, evaluation and inference have been wrapped in `run.sh`. One can start one procedure by running run.sh with specific arguments. The basic usage is:
+The PaddlePaddle baseline includes the following procedures: paragraph extraction, vocabulary preparation, training, evaluation and inference. All these procedures have been wrapped in `paddle/run.sh`. You can start one procedure by running run.sh with specific arguments. The basic usage is:
 
 ```
 sh run.sh --PROCESS_NAME --OTHER_ARGS
 ```
 
-PROCESS\_NAME can be one of `para_extraction`, `prepare`, `train`, `evaluate` and `predict` (see the below detailed description for each procedure). OTHER\_ARGS are the specific arguments, which can be found in args.py. 
+PROCESS\_NAME can be one of `para_extraction`, `prepare`, `train`, `evaluate` and `predict` (see the below detailed description for each procedure). OTHER\_ARGS are the specific arguments, which can be found in `paddle/args.py`. 
 
-In the examples below, we use the demo dataset (under data/demo) by default to demonstrate the usages of run.sh. 
+In the examples below, we use the demo dataset (under `data/demo`) by default to demonstrate the usages of `paddle/run.sh`. 
 
 #### Environment Requirements
 Please note that we only tested the baseline on PaddlePaddle v1.2 (Fluid). To install PaddlePaddle, please see [PaddlePaddle Homepage](http://paddlepaddle.org) for more information.
 
 #### Paragraph Extraction
-A sophisticated paragraph extraction strategy can help improve the model performance. Please run the following command to do paragraph extraction:
+We incorporate a new strategy of paragraph extraction to improve the model performance. The details have been noted in `paddle/UPDATES.md`. Please run the following command to apply the new strategy of paragraph extraction on each document:
 
 `sh run.sh --para_extraction`
 
-Please download the preprocessed data before running this command (see the "Preprocess the Data" section above). The results of paragraph extraction will be saved in `data/extracted/`.
+Note that the preprocessed data should be ready before running this command (see the "Preprocess the Data" section above). The results of paragraph extraction will be saved in `data/extracted/`.
 
-#### Preparation
+#### Vocabulary Preparation
 
 Before training the model, you need to prepare the vocabulary for the dataset and create the folders that will be used for storing the models and the results. You can run the following command for the preparation:
 
@@ -64,7 +64,7 @@ sh run.sh --prepare
 ```
 The above command uses the data in `data/demo/` by default. To change the data folder, you need to specify the following arguments:
 
-`sh run.sh --prepare --train_files ../data/extracted/train.json --dev_files ../data/extracted/dev.json --test_files ../data/extracted/test.json`
+```sh run.sh --prepare --train_files ../data/extracted/train.json --dev_files ../data/extracted/dev.json --test_files ../data/extracted/test.json```
 
 #### Training
 
@@ -73,11 +73,11 @@ To train a model, please run the following command:
 ```
 sh run.sh --train --pass_num 5
 ```
-This will start the training process with 5 epochs. The trained model will be evaluated automatically after each epoch, and a folder named by the epoch ID will be created under the folder data/models, in which the model parameters are saved. If you need to change the default hyper-parameters, e.g. initial learning rate and hidden size, please run the commands with the specific arguments. 
+This will start the training process with 5 epochs. The trained model will be evaluated automatically after each epoch, and a folder named by the epoch ID will be created under the folder `data/models`, in which the model parameters are saved. If you need to change the default hyper-parameters, e.g. initial learning rate and hidden size, please run the commands with the specific arguments. 
 
-`sh run.sh --train --pass_num 5 --learning_rate 0.00001 --hidden_size 100`
+```sh run.sh --train --pass_num 5 --learning_rate 0.00001 --hidden_size 100```
 
-More arguments can be found in args.py.
+More arguments can be found in `paddle/args.py`.
 
 
 #### Evaluate
@@ -88,7 +88,7 @@ sh run.sh --evaluate  --load_dir YOUR_MODEL_DIR
 ```
 The model under `YOUR_MODEL_DIR` (e.g. `../data/models/1`) will be loaded and evaluated.
 
-#### Inference
+#### Inference (Prediction)
 To do inference on the test dataset by using a trained model, please run: 
 
 ```
