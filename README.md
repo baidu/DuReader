@@ -51,7 +51,9 @@ Please note that we only tested the baseline on PaddlePaddle v1.2 (Fluid). To in
 #### Paragraph Extraction
 We incorporate a new strategy of paragraph extraction to improve the model performance. The details have been noted in `paddle/UPDATES.md`. Please run the following command to apply the new strategy of paragraph extraction on each document:
 
-`sh run.sh --para_extraction`
+```
+sh run.sh --para_extraction
+```
 
 Note that the preprocessed data should be ready before running this command (see the "Preprocess the Data" section above). The results of paragraph extraction will be saved in `data/extracted/`.
 
@@ -64,7 +66,9 @@ sh run.sh --prepare
 ```
 The above command uses the data in `data/demo/` by default. To change the data folder, you need to specify the following arguments:
 
-```sh run.sh --prepare --train_files ../data/extracted/train.json --dev_files ../data/extracted/dev.json --test_files ../data/extracted/test.json```
+```
+sh run.sh --prepare --train_files ../data/extracted/train.json --dev_files ../data/extracted/dev.json --test_files ../data/extracted/test.json
+```
 
 #### Training
 
@@ -75,7 +79,9 @@ sh run.sh --train --pass_num 5
 ```
 This will start the training process with 5 epochs. The trained model will be evaluated automatically after each epoch, and a folder named by the epoch ID will be created under the folder `data/models`, in which the model parameters are saved. If you need to change the default hyper-parameters, e.g. initial learning rate and hidden size, please run the commands with the specific arguments. 
 
-```sh run.sh --train --pass_num 5 --learning_rate 0.00001 --hidden_size 100```
+```
+sh run.sh --train --pass_num 5 --learning_rate 0.00001 --hidden_size 100
+```
 
 More arguments can be found in `paddle/args.py`.
 
