@@ -1,6 +1,10 @@
-# Paddle.updates
+# The notes on the updates of Paddle baseline
 
-We implement a BiDAF model with PaddlePaddle (see the paper). Note that we have an update on the PaddlePaddle baseline (Feb 25, 2019). In this document, we give the details of the major updates:
+## Updates
+
+We implement a BiDAF model with PaddlePaddle. Note that we have an update on the PaddlePaddle baseline (Feb 25, 2019). In this document, we give the details of the major updates:
+
+### Paragraph Extraction
 
 1. The first update is that we incorporate a strategy of paragraph extraction to improve the model performance. A similar strategy has been used in the Top-1 system (Liu et al. 2018) at 2018 Machine Reading Challenge. 
 
@@ -9,15 +13,17 @@ possible.
 
 	The details of the new strategy of paragraph extraction is as follows. We apply the new paragraph extraction strategy on each document: 
 	
-	-	We remove the duplicated paragraphs in the document.
+	- We remove the duplicated paragraphs in the document.
 	 
 	- We concatenate the title and all paragraphs in the document with a pre-defined splitter if it is shorter than a predefined maximum length. Otherwise, 
 		- We compute F1 score of each paragraph relative to the question; 
 		- We concatenate the title and the top-K paragraphs (by F1 score) with a pre-defined splitter to form an extracted paragraph that should be shorter than the predefined maximum length.
 
+### The Prior of Document Ranking
+
 2. We also introduce the prior of document ranking from search engine. The documents in DuReader are collected from the search results. Hence, the prior scores of document ranking is an important feature. We compute the prior scores from the training data and apply the prior scores in the testing stage.  
 
-Reference
+## Reference
 
 - Liu, J., Wei, W., Sun, M., Chen, H., Du, Y. and Lin, D., 2018. A Multi-answer Multi-task Framework for Real-world Machine Reading Comprehension. In Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing (pp. 2109-2118).
 
