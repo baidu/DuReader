@@ -1,4 +1,4 @@
-# The notes on the updates of Paddle baseline
+# The notes on the updates of PaddlePaddle baseline
 
 ## Updates
 
