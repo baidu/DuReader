@@ -40,10 +40,10 @@ case $PROCESS_NAME in
     fi
     paragraph_extraction ../data/preprocessed ../data/extracted
     ;;
-    --train|--evaluate|--predict)
+    --prepare|--train|--evaluate|--predict)
         # Start Paddle baseline
         python run.py $@
     ;;
     *)
-        echo $"Usage: $0 {--para_extraction|--train|--evaluate|--predict}"
+        echo $"Usage: $0 {--para_extraction|--prepare|--train|--evaluate|--predict}"
 esac

@@ -64,18 +64,18 @@ sh run.sh --prepare
 ```
 The above command uses the data in `data/demo/` by default. To change the data folder, you need to specify the following arguments:
 
-`sh run.sh --prepare –-train_files ../data/extracted/train.json –-dev_files ../data/extracted/dev.json –-test_files ../data/extracted/test.json`
+`sh run.sh --prepare --train_files ../data/extracted/train.json --dev_files ../data/extracted/dev.json --test_files ../data/extracted/test.json`
 
 #### Training
 
 To train a model, please run the following command:
 
 ```
-sh run.sh --train --epoch 5
+sh run.sh --train --pass_num 5
 ```
 This will start the training process with 5 epochs. The trained model will be evaluated automatically after each epoch, and a folder named by the epoch ID will be created under the folder data/models, in which the model parameters are saved. If you need to change the default hyper-parameters, e.g. initial learning rate and hidden size, please run the commands with the specific arguments. 
 
-`sh run.sh --train –-epoch 5 –-learning_rate 0.00001 –-hidden_size 100`
+`sh run.sh --train --pass_num 5 --learning_rate 0.00001 --hidden_size 100`
 
 More arguments can be found in args.py.
 
