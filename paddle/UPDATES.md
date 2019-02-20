@@ -6,7 +6,7 @@ We implement a BiDAF model with PaddlePaddle. Note that we have an update on the
 
 ### 1 Paragraph Extraction
 
-The first update is that we incorporate a strategy of paragraph extraction to improve the model performance (see the file `paddle/para_extraction.py`). A similar strategy has been used in the Top-1 system (Liu et al. 2018) at 2018 Machine Reading Challenge. 
+The first update is that we incorporate a strategy of paragraph extraction to improve the model performance (see the file `paddle/para_extraction.py`). A similar strategy has been used in the Top-1 system (Liu et al. 2018) at [2018 Machine Reading Challenge](http://mrc2018.cipsc.org.cn/). 
 
 The original baseline of DuReader (He et al. 2018) employed a simple strategy to select paragraphs for model training and testing. However, the paragraphs that includes the true answers may not be selected. Hence, we want to incorporate as much information for the answer extraction as possible. 
 
