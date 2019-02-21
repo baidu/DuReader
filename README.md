@@ -33,63 +33,84 @@ The preprocessed data can be automatically downloaded by `data/download.sh`, and
 
 ### Run PaddlePaddle
 
-#### Get the Vocab File
+We implement a BiDAF model with PaddlePaddle. Note that we have an update on the PaddlePaddle baseline (Feb 25, 2019). The major updates have been noted in `paddle/UPDATES.md`. On the dataset of DuReader, the PaddlePaddle baseline has better performance than our Tensorflow baseline. 
 
-Once the preprocessed data is ready, you can run `utils/get_vocab.py` to generate the vocabulary file, for example, if you want to train model with Baidu Search data:
+The PaddlePaddle baseline includes the following procedures: paragraph extraction, vocabulary preparation, training, evaluation and inference. All these procedures have been wrapped in `paddle/run.sh`. You can start one procedure by running run.sh with specific arguments. The basic usage is:
+
 ```
-python utils/get_vocab.py --files data/preprocessed/trainset/search.train.json data/preprocessed/devset/search.dev.json  --vocab data/vocab.search
+sh run.sh --PROCESS_NAME --OTHER_ARGS
 ```
 
-If you want to use the demo data, run:
-```
-python utils/get_vocab.py --files data/demo/trainset/search.train.json data/demo/devset/search.dev.json  --vocab data/demo/vocab.search
-```
+PROCESS\_NAME can be one of `para_extraction`, `prepare`, `train`, `evaluate` and `predict` (see the below detailed description for each procedure). OTHER\_ARGS are the specific arguments, which can be found in `paddle/args.py`. 
+
+In the examples below (except for 'Paragraph Extraction'), we use the demo dataset (under `data/demo`) by default to demonstrate the usages of `paddle/run.sh`. 
 
 #### Environment Requirements
-For now we've only tested on PaddlePaddle v0.10.5, to install PaddlePaddle and for more details about PaddlePaddle, see [PaddlePaddle Homepage](http://paddlepaddle.org).
+Please note that we only tested the baseline on PaddlePaddle v1.2 (Fluid). To install PaddlePaddle, please see [PaddlePaddle Homepage](http://paddlepaddle.org) for more information.
+
+#### Paragraph Extraction
+We incorporate a new strategy of paragraph extraction to improve the model performance. The details have been noted in `paddle/UPDATES.md`. Please run the following command to apply the new strategy of paragraph extraction on each document:
+
+```
+sh run.sh --para_extraction
+```
+
+Note that the full preprocessed dataset should be ready before running this command (see the "Preprocess the Data" section above). The results of paragraph extraction will be saved in `data/extracted/`. This procedure is only required befor running the full dataset, if you just want to try vocabulary preparation/training/evaluating/inference with demo data, you can sikp this one.
+
+#### Vocabulary Preparation
+
+Before training the model, you need to prepare the vocabulary for the dataset and create the folders that will be used for storing the models and the results. You can run the following command for the preparation:
+
+```
+sh run.sh --prepare
+```
+The above command uses the data in `data/demo/` by default. To change the data folder, you need to specify the following arguments:
+
+```
+sh run.sh --prepare --trainset ../data/extracted/trainset/zhidao.train.json ../data/extracted/trainset/search.train.json --devset ../data/extracted/devset/zhidao.dev.json ../data/extracted/devset/search.dev.json --testset ../data/extracted/testset/zhidao.test.json ../data/extracted/testset/search.test.json
+```
 
 #### Training
-We implement 3 models with PaddlePaddle: Match-LSTM, BiDAF, and a classification model for data with `query_type='YES_NO'`, the model simply replaces the Pointer-Net on top of Match-LSTM model with a one-layered classifier. The 3 implemented models can all be trained and inferred by run `run.py`, to specify the model to train or to infer, use `--algo [mlstm|bidaf|yesno]`, for complete usage run `python run.py -h`.
 
-The basic training and inference process has been wrapped in `run.sh`,  the basic usage is:
-```
-bash run.sh EXPERIMENT_NAME ALGO_NAME TASK_NAME
-```
-`EXPERIMENT_NAME` can be any legal folder name,  `ALGO_NAME` should be `bidaf`, `mlstm` or `yesno` for the 3 models have been implemented.
-For example, to train a model with BiDAF, run:
-```
-bash run.sh test_bidaf bidaf train
-```
-`run.sh` creates a folder named `models`, and for every experiment a folder named `EXPERIMENT_NAME` is created under models, the basic experiment folder layout should be like:
-```
-models
-└── test_bidaf
-    ├── env
-    ├── infer
-    ├── log
-    └── models
-```
-For training, all scripts the experiment uses will first be copied to `env`, and then run from there, and inference process is also run from `env`. `infer` folder keeps the result file created by inference, `log` folder keeps training and inference logs, and `models` folder keeps the models saved during training.
+To train a model (on the demo trainset), please run the following command:
 
-*Because our datatset and the model capacity is very large, if it's out of your device's capacity to successfully run the whole process, you can try with the shipped demo data, just use `run_demo.sh` for training and inferring,the usage is the same as `run.sh`*
-
-#### Inference
-To infer a trained model, run the same command as training and change `train` to `infer`,  and add `--testset <path_to_testset>` argument. for example, suppose the 'test_bidaf' experiment is successfully trained,  to infer the saved models, run:
 ```
-bash run.sh test_bidaf bidaf infer --testset ../data/preprocessed/testset/search.test.json
+sh run.sh --train --pass_num 5
 ```
-The results corresponding to each model saved is under `infer` folder, and the evaluation metrics is logged into the infer log files under `log`.
+This will start the training process with 5 epochs. The trained model will be evaluated automatically after each epoch, and a folder named by the epoch ID will be created under the folder `data/models`, in which the model parameters are saved. If you need to change the default hyper-parameters, e.g. initial learning rate and hidden size, please run the commands with the specific arguments. 
 
-Note if you want to infer a 'yesno' model, please specify an inferred result of a RC model, i.e. 'bidaf' or 'mlstm', under `models/SOME_RC_MODEL/infer/`, to `--testset`, because the 'yesno' model need the result answer of a RC model as its input.
+```
+sh run.sh --train --pass_num 5 --learning_rate 0.00001 --hidden_size 100
+```
 
-#### Test result submission
-You can infer and evaluate your models on development data set locally by following the above steps, once you've developed a model that works to your expectation on the dev set, we highly recommend you to submit your inference result on the released test set to us to evaluate. To get inference file on test set:
+More arguments can be found in `paddle/args.py`.
+
+
+#### Evaluate
+To evaluate a specific model (on the demo devset), please run the following command:
+
+```
+sh run.sh --evaluate  --load_dir YOUR_MODEL_DIR
+```
+The model under `YOUR_MODEL_DIR` (e.g. `../data/models/1`) will be loaded and evaluated.
+
+#### Inference (Prediction)
+To do inference (on the demo testset) by using a trained model, please run: 
+
+```
+sh run.sh --predict  --load_dir YOUR_MODEL_DIR 
+```
+The predicted answers will be saved in the folder `data/results`.
+
+
+
+#### Submit the test results
+Once you train a model that is tuned on the dev set, we highly recommend you submit the predictions on test set to the site of DuReader for evaluation purpose. To get inference file on test set:
 
 1. make sure the training is over.
-2. infer your models on dev set and pick the best model.
-3. keep only the best model under `models/<EXPERIMENT_NAME>/models`.
-4. infer again with test set.
-5. [submit the infer result file](http://ai.baidu.com/broad/submission?dataset=dureader).
+2. select the best model under `data/models` according to the training log.
+3. predict the results on test set.
+4. [submit the prediction result file](http://ai.baidu.com/broad/submission?dataset=dureader).
 
 ### Run Tensorflow
 

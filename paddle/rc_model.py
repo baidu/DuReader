@@ -1,350 +1,330 @@
-# -*- coding:utf8 -*-
-# ==============================================================================
-# Copyright 2017 Baidu.com, Inc. All Rights Reserved
+#   Copyright (c) 2018 PaddlePaddle Authors. All Rights Reserve.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ==============================================================================
-"""
-This module implements the basic common functions of the Match-LSTM and BiDAF
-networks.
-"""
 
-import copy
-import math
-import json
-import logging
-import paddle.v2.layer as layer
-import paddle.v2.attr as Attr
-import paddle.v2.activation as Act
-import paddle.v2.data_type as data_type
-import paddle.v2 as paddle
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
-from utils import compute_bleu_rouge
-from utils import normalize
+import paddle.fluid.layers as layers
+import paddle.fluid as fluid
+import numpy as np
 
-logger = logging.getLogger("paddle")
-logger.setLevel(logging.INFO)
 
-class RCModel(object):
+def dropout(input, args):
+    """Dropout function"""
+    if args.drop_rate:
+        return layers.dropout(
+            input,
+            dropout_prob=args.drop_rate,
+            seed=args.random_seed,
+            is_test=False)
+    else:
+        return input
+
+
+def bi_lstm_encoder(input_seq, gate_size, para_name, args):
     """
-    This is the base class of Match-LSTM and BiDAF models.
+    A bi-directional lstm encoder implementation.
+    Linear transformation part for input gate, output gate, forget gate
+    and cell activation vectors need be done outside of dynamic_lstm.
+    So the output size is 4 times of gate_size.
     """
-    def __init__(self, name, inputs, *args, **kwargs):
-        self.name = name
-        self.inputs = inputs
-        self.emb_dim = kwargs['emb_dim']
-        self.vocab_size = kwargs['vocab_size']
-        self.is_infer = kwargs['is_infer']
-        self.doc_num = kwargs.get('doc_num', 5)
-        self.static_emb = kwargs.get('static_emb', False)
-        self.max_a_len = kwargs.get('max_a_len', 200)
 
-    def check_and_create_data(self):
-        """
-        Checks if the input data is legal and creates the data layers
-        according to the input fields.
-        """
-        if self.is_infer:
-            expected = ['q_ids', 'p_ids', 'para_length',
-                        '[start_label, end_label, ...]']
-            if len(self.inputs) < 2 * self.doc_num + 1:
-                raise ValueError(r'''Input schema: expected vs given:
-                         {} vs {}'''.format(expected, self.inputs))
-        else:
-            expected = ['q_ids', 'p_ids', 'para_length',
-                        'start_label', 'end_label', '...']
-            if len(self.inputs) < 4 * self.doc_num + 1:
-                raise ValueError(r'''Input schema: expected vs given:
-                         {} vs {}'''.format(expected, self.inputs))
-            self.start_labels = []
-            for i in range(1 + 2 * self.doc_num, 1 + 3 * self.doc_num):
-                self.start_labels.append(
-                        layer.data(name=self.inputs[i],
-                            type=data_type.dense_vector_sequence(1)))
-            self.start_label = reduce(
-                    lambda x, y: layer.seq_concat(a=x, b=y),
-                    self.start_labels)
-            self.end_labels = []
-            for i in range(1 + 3 * self.doc_num, 1 + 4 * self.doc_num):
-                self.end_labels.append(
-                        layer.data(name=self.inputs[i],
-                            type=data_type.dense_vector_sequence(1)))
-            self.end_label = reduce(
-                    lambda x, y: layer.seq_concat(a=x, b=y),
-                    self.end_labels)
-        self.q_ids = layer.data(
-                name=self.inputs[0],
-                type=data_type.integer_value_sequence(self.vocab_size))
-        self.p_ids = []
-        for i in range(1, 1 + self.doc_num):
-            self.p_ids.append(
-                    layer.data(name=self.inputs[i],
-                        type=data_type.integer_value_sequence(self.vocab_size)))
-        self.para_lens = []
-        for i in range(1 + self.doc_num, 1 + 2 * self.doc_num):
-            self.para_lens.append(
-                    layer.data(name=self.inputs[i],
-                        type=data_type.dense_vector_sequence(1)))
-        self.para_len = reduce(lambda x, y: layer.seq_concat(a=x, b=y),
-                self.para_lens)
+    input_forward_proj = layers.fc(
+        input=input_seq,
+        param_attr=fluid.ParamAttr(name=para_name + '_fw_gate_w'),
+        size=gate_size * 4,
+        act=None,
+        bias_attr=False)
+    input_reversed_proj = layers.fc(
+        input=input_seq,
+        param_attr=fluid.ParamAttr(name=para_name + '_bw_gate_w'),
+        size=gate_size * 4,
+        act=None,
+        bias_attr=False)
+    forward, _ = layers.dynamic_lstm(
+        input=input_forward_proj,
+        size=gate_size * 4,
+        use_peepholes=False,
+        param_attr=fluid.ParamAttr(name=para_name + '_fw_lstm_w'),
+        bias_attr=fluid.ParamAttr(name=para_name + '_fw_lstm_b'))
+    reversed, _ = layers.dynamic_lstm(
+        input=input_reversed_proj,
+        param_attr=fluid.ParamAttr(name=para_name + '_bw_lstm_w'),
+        bias_attr=fluid.ParamAttr(name=para_name + '_bw_lstm_b'),
+        size=gate_size * 4,
+        is_reverse=True,
+        use_peepholes=False)
 
-    def create_shared_params(self):
-        """
-        Creates parameter objects that shared by multiple layers.
-        """
-        # embedding parameter, shared by question and paragraph.
-        self.emb_param = Attr.Param(name=self.name + '.embs',
-                                    is_static=self.static_emb,
-                                    initial_std=math.sqrt(1. / self.emb_dim))
+    encoder_out = layers.concat(input=[forward, reversed], axis=1)
+    return encoder_out
 
-    def get_embs(self, input):
-        """
-        Get embeddings of token sequence.
-        Args:
-            - input: input sequence of tokens. Should be of type
-                     paddle.v2.data_type.integer_value_sequence
-        Returns:
-            The sequence of embeddings.
-        """
-        embs = layer.embedding(input=input,
-                               size=self.emb_dim,
-                               param_attr=self.emb_param)
-        return embs
 
-    def network(self):
-        """
-        Implements the detail of the model. Should be implemented by subclasses.
-        """
-        raise NotImplementedError
+def get_data(input_name, lod_level, args):
+    input_ids = layers.data(
+        name=input_name, shape=[1], dtype='int64', lod_level=lod_level)
+    return input_ids
 
-    def get_loss(self, start_prob, end_prob, start_label, end_label):
-        """
-        Compute the loss: $l_{\theta} = -logP(start)\cdotP(end|start)$
 
-        Returns:
-            A LayerOutput object containing loss.
-        """
-        probs = layer.seq_concat(a=start_prob, b=end_prob)
-        labels = layer.seq_concat(a=start_label, b=end_label)
+def embedding(input_ids, shape, args):
+    """Embedding layer"""
+    input_embedding = layers.embedding(
+        input=input_ids,
+        size=shape,
+        dtype='float32',
+        is_sparse=True,
+        param_attr=fluid.ParamAttr(name='embedding_para'))
+    return input_embedding
 
-        log_probs = layer.mixed(
-                    size=probs.size,
-                    act=Act.Log(),
-                    bias_attr=False,
-                    input=paddle.layer.identity_projection(probs))
 
-        neg_log_probs = layer.slope_intercept(
-                        input=log_probs,
-                        slope=-1,
-                        intercept=0)
+def encoder(input_embedding, para_name, hidden_size, args):
+    """Encoding layer"""
+    encoder_out = bi_lstm_encoder(
+        input_seq=input_embedding,
+        gate_size=hidden_size,
+        para_name=para_name,
+        args=args)
+    return dropout(encoder_out, args)
 
-        loss = paddle.layer.mixed(
-               size=1,
-               input=paddle.layer.dotmul_operator(a=neg_log_probs, b=labels))
 
-        sum_val = paddle.layer.pooling(input=loss,
-                                       pooling_type=paddle.pooling.Sum())
-        cost = paddle.layer.sum_cost(input=sum_val)
-        return cost
+def attn_flow(q_enc, p_enc, p_ids_name, args):
+    """Bidirectional Attention layer"""
+    tag = p_ids_name + "::"
+    drnn = layers.DynamicRNN()
+    with drnn.block():
+        h_cur = drnn.step_input(p_enc)
+        u_all = drnn.static_input(q_enc)
+        h_expd = layers.sequence_expand(x=h_cur, y=u_all)
+        s_t_mul = layers.elementwise_mul(x=u_all, y=h_expd, axis=0)
+        s_t_sum = layers.reduce_sum(input=s_t_mul, dim=1, keep_dim=True)
+        s_t_re = layers.reshape(s_t_sum, shape=[-1, 0])
+        s_t = layers.sequence_softmax(input=s_t_re)
+        u_expr = layers.elementwise_mul(x=u_all, y=s_t, axis=0)
+        u_expr = layers.sequence_pool(input=u_expr, pool_type='sum')
 
-    def train(self):
-        """
-        The training interface.
+        b_t = layers.sequence_pool(input=s_t_sum, pool_type='max')
+        drnn.output(u_expr, b_t)
+    U_expr, b = drnn()
+    b_norm = layers.sequence_softmax(input=b)
+    h_expr = layers.elementwise_mul(x=p_enc, y=b_norm, axis=0)
+    h_expr = layers.sequence_pool(input=h_expr, pool_type='sum')
 
-        Returns:
-            A LayerOutput object containing loss.
-        """
-        start, end = self.network()
-        cost = self.get_loss(start, end, self.start_label, self.end_label)
-        return cost
+    H_expr = layers.sequence_expand(x=h_expr, y=p_enc)
+    H_expr = layers.lod_reset(x=H_expr, y=p_enc)
+    h_u = layers.elementwise_mul(x=p_enc, y=U_expr, axis=0)
+    h_h = layers.elementwise_mul(x=p_enc, y=H_expr, axis=0)
 
-    def infer(self):
-        """
-        The inferring interface.
+    g = layers.concat(input=[p_enc, U_expr, h_u, h_h], axis=1)
+    return dropout(g, args)
 
-        Returns:
-            start_end: A sequence of concatenated start and end probabilities.
-            para_len: A sequence of the lengths of every paragraph, which is
-                      used for parse the inferring output.
-        """
-        start, end = self.network()
-        start_end = layer.seq_concat(name='start_end', a=start, b=end)
-        return start_end, self.para_len
 
-    def decode(self, name, input):
-        """
-        Implements the answer pointer part of the model.
+def fusion(g, args):
+    """Fusion layer"""
+    m = bi_lstm_encoder(
+        input_seq=g, gate_size=args.hidden_size, para_name='fusion', args=args)
+    return dropout(m, args)
 
-        Args:
-            name: name prefix of the layers defined in this method.
-            input: the encoding of the paragraph.
 
-        Returns:
-            A probability distribution over temporal axis.
-        """
-        latent = layer.fc(size=input.size / 2,
-                          input=input,
-                          act=Act.Tanh(),
-                          bias_attr=False)
-        probs = layer.fc(
-                name=name,
-                size=1,
-                input=latent,
-                act=Act.SequenceSoftmax())
-        return probs
+def lstm_step(x_t, hidden_t_prev, cell_t_prev, size, para_name, args):
+    """Util function for pointer network"""
+    def linear(inputs, para_name, args):
+        return layers.fc(input=inputs,
+                         size=size,
+                         param_attr=fluid.ParamAttr(name=para_name + '_w'),
+                         bias_attr=fluid.ParamAttr(name=para_name + '_b'))
 
-    def _search_boundry(self, start_probs, end_probs):
-        assert len(start_probs) == len(end_probs)
-        boundries = []
-        for start_idx, start_prob in enumerate(start_probs):
-            max_idx = min(start_idx + self.max_a_len + 1, len(end_probs))
-            for end_idx in range(start_idx, max_idx):
-                end_prob = end_probs[end_idx]
-                boundries.append(
-                    ((start_idx, end_idx), start_prob * end_prob))
-        max_boundry = sorted(boundries, key=lambda x: x[1], reverse=True)[0][0]
-        return max_boundry
+    input_cat = layers.concat([hidden_t_prev, x_t], axis=1)
+    forget_gate = layers.sigmoid(x=linear(input_cat, para_name + '_lstm_f',
+                                          args))
+    input_gate = layers.sigmoid(x=linear(input_cat, para_name + '_lstm_i',
+                                         args))
+    output_gate = layers.sigmoid(x=linear(input_cat, para_name + '_lstm_o',
+                                          args))
+    cell_tilde = layers.tanh(x=linear(input_cat, para_name + '_lstm_c', args))
 
-    def _parse_infer_ret(self, infer_ret):
-        pred_list = []
-        ref_list = []
-        objs = []
-        ins_cnt = 0
-        for batch_input, batch_output in infer_ret:
-            lens, probs = [x.flatten() for x in batch_output]
-            len_sum = int(sum(lens))
-            assert len(probs) == 2 * len_sum
-            idx_len = 0
-            idx_prob = 0
+    cell_t = layers.sums(input=[
+        layers.elementwise_mul(
+            x=forget_gate, y=cell_t_prev), layers.elementwise_mul(
+                x=input_gate, y=cell_tilde)
+    ])
 
-            for ins in batch_input:
-                ins = ins[-1]
-                len_slice = lens[idx_len:idx_len + self.doc_num]
-                prob_len = int(sum(len_slice))
-                start_prob_slice = probs[idx_prob:idx_prob + prob_len]
-                end_prob_slice = probs[idx_prob + prob_len:idx_prob + 2 * prob_len]
-                start_idx, end_idx = self._search_boundry(start_prob_slice,
-                        end_prob_slice)
-                pred_tokens = [] if start_idx > end_idx \
-                        else ins['tokens'][start_idx:end_idx + 1]
+    hidden_t = layers.elementwise_mul(x=output_gate, y=layers.tanh(x=cell_t))
 
-                pred = [' '.join(pred_tokens)]
-                ref = [' '.join(s) for s in ins['answers_ref']]
+    return hidden_t, cell_t
 
-                idx_len += self.doc_num
-                idx_prob += prob_len * 2
-                pred_obj = {ins['question_id']: pred}
-                ref_obj = {ins['question_id']: ref}
-                stored_obj = copy.deepcopy(ins)
-                stored_obj['answers'] = pred
-                objs.append(stored_obj)
-                pred_list.append(pred_obj)
-                ref_list.append(ref_obj)
-                ins_cnt += 1
-        return ref_list, pred_list, objs
 
-    def _read_list(self, infer_file):
-        ref_list = []
-        pred_list = []
-        with open(infer_file, 'r') as inf:
-            for line in inf:
-                obj = json.loads(line.strip())
-                ref_obj = {obj['question_id']: obj['answers_ref']}
-                pred_obj = {obj['question_id']: obj['answers']}
-                ref_list.append(ref_obj)
-                pred_list.append(pred_obj)
-        return ref_list, pred_list
+def point_network_decoder(p_vec, q_vec, hidden_size, args):
+    """Output layer - pointer network"""
+    tag = 'pn_decoder:'
+    init_random = fluid.initializer.Normal(loc=0.0, scale=1.0)
 
-    def drop_out(self, input, drop_rate=0.5):
-        """
-        Implements drop out.
+    random_attn = layers.create_parameter(
+        shape=[1, hidden_size],
+        dtype='float32',
+        default_initializer=init_random)
+    random_attn = layers.fc(
+        input=random_attn,
+        size=hidden_size,
+        act=None,
+        param_attr=fluid.ParamAttr(name=tag + 'random_attn_fc_w'),
+        bias_attr=fluid.ParamAttr(name=tag + 'random_attn_fc_b'))
+    random_attn = layers.reshape(random_attn, shape=[-1])
+    U = layers.fc(input=q_vec,
+                  param_attr=fluid.ParamAttr(name=tag + 'q_vec_fc_w'),
+                  bias_attr=False,
+                  size=hidden_size,
+                  act=None) + random_attn
+    U = layers.tanh(U)
 
-        Args:
-            input: the LayerOutput needs to apply drop out.
-            drop_rate: drop out rate.
+    logits = layers.fc(input=U,
+                       param_attr=fluid.ParamAttr(name=tag + 'logits_fc_w'),
+                       bias_attr=fluid.ParamAttr(name=tag + 'logits_fc_b'),
+                       size=1,
+                       act=None)
+    scores = layers.sequence_softmax(input=logits)
+    pooled_vec = layers.elementwise_mul(x=q_vec, y=scores, axis=0)
+    pooled_vec = layers.sequence_pool(input=pooled_vec, pool_type='sum')
 
-        Returns:
-            The layer output after applying drop out.
-        """
-        with layer.mixed(
-                layer_attr=Attr.ExtraLayerAttribute(
-                    drop_rate=drop_rate),
-                bias_attr=False) as dropped:
-            dropped += layer.identity_projection(input)
-        return dropped
+    init_state = layers.fc(
+        input=pooled_vec,
+        param_attr=fluid.ParamAttr(name=tag + 'init_state_fc_w'),
+        bias_attr=fluid.ParamAttr(name=tag + 'init_state_fc_b'),
+        size=hidden_size,
+        act=None)
 
-    def fusion_layer(self, input1, input2):
-        """
-        Combine input1 and input2 by concat(input1 .* input2, input1 - input2,
-        input1, input2)
-        """
-        # fusion layer
-        neg_input2 = layer.slope_intercept(input=input2,
-                slope=-1.0,
-                intercept=0.0)
-        diff1 = layer.addto(input=[input1, neg_input2],
-                act=Act.Identity(),
-                bias_attr=False)
-        diff2 = layer.mixed(bias_attr=False,
-                input=layer.dotmul_operator(a=input1, b=input2))
+    def custom_dynamic_rnn(p_vec, init_state, hidden_size, para_name, args):
+        tag = para_name + "custom_dynamic_rnn:"
 
-        fused = layer.concat(input=[input1, input2, diff1, diff2])
-        return fused
+        def static_rnn(step,
+                       p_vec=p_vec,
+                       init_state=None,
+                       para_name='',
+                       args=args):
+            tag = para_name + "static_rnn:"
+            ctx = layers.fc(
+                input=p_vec,
+                param_attr=fluid.ParamAttr(name=tag + 'context_fc_w'),
+                bias_attr=fluid.ParamAttr(name=tag + 'context_fc_b'),
+                size=hidden_size,
+                act=None)
 
-    def evaluate(self,
-            infer_file,
-            ret=None,
-            from_file=False):
-        """
-        Processes and evaluates the inferred result.
+            beta = []
+            c_prev = init_state
+            m_prev = init_state
+            for i in range(step):
+                m_prev0 = layers.fc(
+                    input=m_prev,
+                    size=hidden_size,
+                    act=None,
+                    param_attr=fluid.ParamAttr(name=tag + 'm_prev0_fc_w'),
+                    bias_attr=fluid.ParamAttr(name=tag + 'm_prev0_fc_b'))
+                m_prev1 = layers.sequence_expand(x=m_prev0, y=ctx)
 
-        Args:
-            infer_file: A file name to store or read from the inferred results.
-            ret: The information returned by the inferring operation, which
-                 contains the batch-level input and the the batch-level
-                 inferring result.
-            from_file: If True, the time consuming inferring process will be
-                       skipped, and this method takes the content of infer_file
-                       as input for evaluation. If False, this method takes
-                       the ret as input for evaluation.
+                Fk = ctx + m_prev1
+                Fk = layers.tanh(Fk)
+                logits = layers.fc(
+                    input=Fk,
+                    size=1,
+                    act=None,
+                    param_attr=fluid.ParamAttr(name=tag + 'logits_fc_w'),
+                    bias_attr=fluid.ParamAttr(name=tag + 'logits_fc_b'))
 
-        """
-        def _merge_and_normalize(obj_list):
-            ret = {}
-            for obj in obj_list:
-                normalized = {k: normalize(v) for k, v in obj.items()}
-                ret.update(normalized)
-            return ret
+                scores = layers.sequence_softmax(input=logits)
+                attn_ctx = layers.elementwise_mul(x=p_vec, y=scores, axis=0)
+                attn_ctx = layers.sequence_pool(input=attn_ctx, pool_type='sum')
 
-        pred_list = []
-        ref_list = []
-        objs = []
+                hidden_t, cell_t = lstm_step(
+                    attn_ctx,
+                    hidden_t_prev=m_prev,
+                    cell_t_prev=c_prev,
+                    size=hidden_size,
+                    para_name=tag,
+                    args=args)
+                m_prev = hidden_t
+                c_prev = cell_t
+                beta.append(scores)
+            return beta
 
-        if from_file:
-            ref_list, pred_list = self._read_list(infer_file)
-        else:
-            ref_list, pred_list, objs = self._parse_infer_ret(ret)
-            with open(infer_file, 'w') as of:
-                for o in objs:
-                    print >> of, json.dumps(o, ensure_ascii=False).encode('utf8')
-        metrics = compute_bleu_rouge(
-                _merge_and_normalize(pred_list),
-                _merge_and_normalize(ref_list))
-        res_str = '{} {}'.format(infer_file,
-                ' '.join('{}={}'.format(k, v) for k, v in metrics.items()))
-        logger.info(res_str)
+        return static_rnn(
+            2, p_vec=p_vec, init_state=init_state, para_name=para_name)
 
-    def __call__(self):
-        if self.is_infer:
-            return self.infer()
-        return self.train()
+    fw_outputs = custom_dynamic_rnn(p_vec, init_state, hidden_size, tag + "fw:",
+                                    args)
+    bw_outputs = custom_dynamic_rnn(p_vec, init_state, hidden_size, tag + "bw:",
+                                    args)
+
+    start_prob = layers.elementwise_add(
+        x=fw_outputs[0], y=bw_outputs[1], axis=0) / 2
+    end_prob = layers.elementwise_add(
+        x=fw_outputs[1], y=bw_outputs[0], axis=0) / 2
+
+    return start_prob, end_prob
+
+
+def rc_model(hidden_size, vocab, args):
+    """This function build the whole BiDAF network"""
+    emb_shape = [vocab.size(), vocab.embed_dim]
+    start_labels = layers.data(
+        name="start_lables", shape=[1], dtype='float32', lod_level=1)
+    end_labels = layers.data(
+        name="end_lables", shape=[1], dtype='float32', lod_level=1)
+
+    # stage 1:setup input data, embedding table & encode
+    q_id0 = get_data('q_id0', 1, args)
+
+    q_ids = get_data('q_ids', 2, args)
+    p_ids_name = 'p_ids'
+
+    p_ids = get_data('p_ids', 2, args)
+    p_embs = embedding(p_ids, emb_shape, args)
+    q_embs = embedding(q_ids, emb_shape, args)
+    drnn = layers.DynamicRNN()
+    with drnn.block():
+        p_emb = drnn.step_input(p_embs)
+        q_emb = drnn.step_input(q_embs)
+
+        p_enc = encoder(p_emb, 'p_enc', hidden_size, args)
+        q_enc = encoder(q_emb, 'q_enc', hidden_size, args)
+
+        # stage 2:match
+        g_i = attn_flow(q_enc, p_enc, p_ids_name, args)
+        # stage 3:fusion
+        m_i = fusion(g_i, args)
+        drnn.output(m_i, q_enc)
+
+    ms, q_encs = drnn()
+    p_vec = layers.lod_reset(x=ms, y=start_labels)
+    q_vec = layers.lod_reset(x=q_encs, y=q_id0)
+
+    # stage 4:decode 
+    start_probs, end_probs = point_network_decoder(
+        p_vec=p_vec, q_vec=q_vec, hidden_size=hidden_size, args=args)
+
+    # calculate model loss
+    cost0 = layers.sequence_pool(
+        layers.cross_entropy(
+            input=start_probs, label=start_labels, soft_label=True),
+        'sum')
+    cost1 = layers.sequence_pool(
+        layers.cross_entropy(
+            input=end_probs, label=end_labels, soft_label=True),
+        'sum')
+
+    cost0 = layers.mean(cost0)
+    cost1 = layers.mean(cost1)
+    cost = cost0 + cost1
+    cost.persistable = True
+
+    feeding_list = ["q_ids", "start_lables", "end_lables", "p_ids", "q_id0"]
+    return cost, start_probs, end_probs, ms, feeding_list
