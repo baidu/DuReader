@@ -43,7 +43,7 @@ sh run.sh --PROCESS_NAME --OTHER_ARGS
 
 PROCESS\_NAME can be one of `para_extraction`, `prepare`, `train`, `evaluate` and `predict` (see the below detailed description for each procedure). OTHER\_ARGS are the specific arguments, which can be found in `paddle/args.py`. 
 
-In the examples below, we use the demo dataset (under `data/demo`) by default to demonstrate the usages of `paddle/run.sh`. 
+In the examples below (except for 'Paragraph Extraction'), we use the demo dataset (under `data/demo`) by default to demonstrate the usages of `paddle/run.sh`. 
 
 #### Environment Requirements
 Please note that we only tested the baseline on PaddlePaddle v1.2 (Fluid). To install PaddlePaddle, please see [PaddlePaddle Homepage](http://paddlepaddle.org) for more information.
@@ -55,7 +55,7 @@ We incorporate a new strategy of paragraph extraction to improve the model perfo
 sh run.sh --para_extraction
 ```
 
-Note that the preprocessed data should be ready before running this command (see the "Preprocess the Data" section above). The results of paragraph extraction will be saved in `data/extracted/`.
+Note that the full preprocessed dataset should be ready before running this command (see the "Preprocess the Data" section above). The results of paragraph extraction will be saved in `data/extracted/`. This procedure is only required befor running the full dataset, if you just want to try vocabulary preparation/training/evaluating/inference with demo data, you can sikp this one.
 
 #### Vocabulary Preparation
 
@@ -67,12 +67,12 @@ sh run.sh --prepare
 The above command uses the data in `data/demo/` by default. To change the data folder, you need to specify the following arguments:
 
 ```
-sh run.sh --prepare --train_files ../data/extracted/train.json --dev_files ../data/extracted/dev.json --test_files ../data/extracted/test.json
+sh run.sh --prepare --trainset ../data/extracted/trainset/zhidao.train.json ../data/extracted/trainset/search.train.json --devset ../data/extracted/devset/zhidao.dev.json ../data/extracted/devset/search.dev.json --testset ../data/extracted/testset/zhidao.test.json ../data/extracted/testset/search.test.json
 ```
 
 #### Training
 
-To train a model, please run the following command:
+To train a model (on the demo trainset), please run the following command:
 
 ```
 sh run.sh --train --pass_num 5
@@ -87,7 +87,7 @@ More arguments can be found in `paddle/args.py`.
 
 
 #### Evaluate
-To evaluate a specific model, please run the following command:
+To evaluate a specific model (on the demo devset), please run the following command:
 
 ```
 sh run.sh --evaluate  --load_dir YOUR_MODEL_DIR
@@ -95,7 +95,7 @@ sh run.sh --evaluate  --load_dir YOUR_MODEL_DIR
 The model under `YOUR_MODEL_DIR` (e.g. `../data/models/1`) will be loaded and evaluated.
 
 #### Inference (Prediction)
-To do inference on the test dataset by using a trained model, please run: 
+To do inference (on the demo testset) by using a trained model, please run: 
 
 ```
 sh run.sh --predict  --load_dir YOUR_MODEL_DIR 
