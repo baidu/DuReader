@@ -279,7 +279,7 @@ def validation(inference_program, avg_cost, s_probs, e_probs, match, feed_order,
                     'question_type': sample['question_type'],
                     'answers': [best_answer],
                     'entity_answers': [[]],
-                    'yesno_answers': [best_span]
+                    'yesno_answers': []
                 }
                 pred_answers.append(pred)
                 if 'answers' in sample:
