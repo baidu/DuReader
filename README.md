@@ -33,7 +33,7 @@ The preprocessed data can be automatically downloaded by `data/download.sh`, and
 
 ### Run PaddlePaddle
 
-We implement a BiDAF model with PaddlePaddle. Note that we have an update on the PaddlePaddle baseline (Feb 25, 2019). The major updates have been noted in `paddle/UPDATES.md`. On the dataset of DuReader, the PaddlePaddle baseline has better performance than our Tensorflow baseline. 
+We implement a BiDAF model with PaddlePaddle. Note that we have an update on the PaddlePaddle baseline (Feb 25, 2019). The major updates have been noted in `paddle/UPDATES.md`. On the dataset of DuReader, the PaddlePaddle baseline has better performance than our Tensorflow baseline. Multi-gpu training is also supported in the PaddlePaddle baseline.
 
 The PaddlePaddle baseline includes the following procedures: paragraph extraction, vocabulary preparation, training, evaluation and inference. All these procedures have been wrapped in `paddle/run.sh`. You can start one procedure by running run.sh with specific arguments. The basic usage is:
 
@@ -102,6 +102,12 @@ sh run.sh --predict  --load_dir YOUR_MODEL_DIR
 ```
 The predicted answers will be saved in the folder `data/results`.
 
+#### PaddlePaddle Baseline performance on DuReader 2.0
+|      Model     | Dev ROUGE-L | Test ROUGE-L |
+| :------------- | :---------: | :----------: |
+| before update  |    39.29    |     45.90    |
+| after update   |    47.65    |     54.58    |
+The results in the table are obtained by using 4 P40 GPU cards with batch size = 4*32. For single card or smaller batch size, the performance might be slightly lower, but should be higher than ROUGE-L=47 on the devset.
 
 
 #### Submit the test results
