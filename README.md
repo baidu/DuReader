@@ -107,6 +107,7 @@ The predicted answers will be saved in the folder `data/results`.
 | :------------- | :---------: | :----------: |
 | before update  |    39.29    |     45.90    |
 | after update   |    47.65    |     54.58    |
+
 The results in the table are obtained by using 4 P40 GPU cards with batch size = 4*32. For single card or smaller batch size, the performance might be slightly lower, but should be higher than ROUGE-L=47 on the devset.
 
 
