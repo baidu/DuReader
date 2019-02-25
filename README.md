@@ -102,13 +102,13 @@ sh run.sh --predict  --load_dir YOUR_MODEL_DIR
 ```
 The predicted answers will be saved in the folder `data/results`.
 
-#### PaddlePaddle Baseline performance on DuReader 2.0
+#### The performance of PaddlePaddle Baseline on DuReader 2.0
 |      Model     | Dev ROUGE-L | Test ROUGE-L |
 | :------------- | :---------: | :----------: |
 | before update  |    39.29    |     45.90    |
 | after update   |    47.65    |     54.58    |
 
-The results in the table are obtained by using 4 P40 GPU cards with batch size = 4*32. For single card or smaller batch size, the performance might be slightly lower, but should be higher than ROUGE-L=47 on the devset.
+The results in the above table are obtained by using 4 P40 GPU cards with batch size = 4*32. If using a single card with a smaller batch size (e.g. 32), the performance might be slightly lower, but should be higher than ROUGE-L=47 on the devset.
 
 
 #### Submit the test results
