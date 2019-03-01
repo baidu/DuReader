@@ -62,14 +62,14 @@ def dup_remove(doc):
     # delete
     prev_del_num = 0
     del_num = 0
-    for p_idx in del_ids:
-        if p_idx < para_id: 
-            prev_del_num += 1
-        del doc["segmented_paragraphs"][p_idx - del_num]
-        del doc["segmented_paragraphs_scores"][p_idx - del_num]
-        del doc['paragraphs_length'][p_idx - del_num]
-        del_num += 1
-    if len(del_ids) != 0:
+    if del_ids and para_id:
+        for p_idx in del_ids:
+            if p_idx < para_id: 
+                prev_del_num += 1
+            del doc["segmented_paragraphs"][p_idx - del_num]
+            del doc["segmented_paragraphs_scores"][p_idx - del_num]
+            del doc['paragraphs_length'][p_idx - del_num]
+            del_num += 1
         if 'most_related_para' in doc:
             doc['most_related_para'] = para_id - prev_del_num
         doc['paragraphs'] = []
