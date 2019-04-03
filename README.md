@@ -106,7 +106,7 @@ The predicted answers will be saved in the folder `data/results`.
 |      Model     | Dev ROUGE-L | Test ROUGE-L |
 | :------------- | :---------: | :----------: |
 | before update  |    39.29    |     45.90    |
-| after update   |    47.65    |     54.66    |
+| after update   |    47.68    |     54.66    |
 
 The results in the above table are obtained by using 4 P40 GPU cards with batch size = 4*32. If using a single card with a smaller batch size (e.g. 32), the performance might be slightly lower, but should be higher than ROUGE-L=47 on the devset. 
 
