@@ -2,17 +2,22 @@
 
 # DuReader
 
-**DuReader focus on the benchmarks of question answering, including answer extraction and the model robustness. .**
+**DuReader focus on the benchmarks and models of machine reading comprehension for question answering.**
 
 DuReader:
 
-> `DuReader 2.0`: A new large-scale real-world and human sourced MRC dataset [[Paper]](https://www.aclweb.org/anthology/W18-2605.pdf) [[Code]](https://github.com/baidu/DuReader) [[Leaderboard]](https://ai.baidu.com/broad/leaderboard?dataset=dureader) 
+> `DuReader 2.0`: A new large-scale real-world and human sourced MRC dataset [[Paper]](https://www.aclweb.org/anthology/W18-2605.pdf) [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-2.0) [[Leaderboard]](https://ai.baidu.com/broad/leaderboard?dataset=dureader) 
 
-> `DuReader Robust`: A dataset challenging models in (1)over-sensitivity, (2)over-stability and (3)generalization.   [[Paper]](https://arxiv.org/abs/2004.11142) [[Code]](https://github.com/PaddlePaddle/Research/tree/master/NLP/DuReader-Robust-BASELINE) [[Learderboard]](https://aistudio.baidu.com/aistudio/competition/detail/49/) 
+> `KT-NET`: A machine reading comprehension (MRC) model which integrates knowledge from knowledge bases (KBs) into pre-trained contextualized representations.   [[Paper]](https://aclanthology.org/P19-1226/) [[Code]](https://github.com/baidu/DuReader/tree/master/ACL2019-KTNET) [[Learderboard]](https://rajpurkar.github.io/SQuAD-explorer/) 
+
+> `D-NET`: A simple pre-training and fine-tuning framework which focused on the generalization of machine reading comprehension (MRC) models.    [[Paper]](https://aclanthology.org/D19-5828/) [[Code]](https://github.com/baidu/DuReader/tree/master/MRQA2019-D-NET) [[Learderboard]](https://mrqa.github.io/2019/shared.html) 
+
+
+> `DuReader Robust`: A dataset challenging models in (1)over-sensitivity, (2)over-stability and (3)generalization.   [[Paper]](https://arxiv.org/abs/2004.11142) [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-Robust) [[Learderboard]](https://aistudio.baidu.com/aistudio/competition/detail/49/) 
 
 > `DuReader Yes/No`: A dataset challenging models in opinion polarity judgment. [[Code]](https://github.com/PaddlePaddle/PaddleNLP/tree/develop/examples/machine_reading_comprehension/DuReader-yesno) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/49/)
 
-> `DuReader Checklist`: A dataset challenging model understanding capabilities in vocabulary, phrase, semantic role, reasoning. [[Code]](https://github.com/PaddlePaddle/Research/tree/master/NLP/DuReader-Checklist-BASELINE) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/66) 
+> `DuReader Checklist`: A dataset challenging model understanding capabilities in vocabulary, phrase, semantic role, reasoning. [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-Checklist) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/66) 
 
 
 
@@ -27,10 +32,11 @@ DuReader:
 - March 2021, DuReader Checklist was released, holding the [DuReader Checklist challenge](https://aistudio.baidu.com/aistudio/competition/detail/66?isFromLuge=true). 
 - March 2020, DuReader Robust was released, holding the [DuReader Robust challenge](https://aistudio.baidu.com/aistudio/competition/detail/28?isFromCcf=true). 
 - December 2019, DuReader Yes/No was released, holding the [ DuReader Yes/No challenge](https://ai.xm.gov.cn/competition/project-detail.html?id=1aedc41540e440a59f86a4c543635f64&competeId=0000075d26e840b1b9ffd10633d6a9bf). After that, DuReader Yes/No [Individual Challenge](https://aistudio.baidu.com/aistudio/competition/detail/25) and [Team Challenge](https://aistudio.baidu.com/aistudio/competition/detail/26) were held.
+- August 2019, D-NET was released and ranked at top 1 of the [MRQA-2019 shared task](https://mrqa.github.io/2019/shared.html).
+- July 2019, [KT-NET](https://aclanthology.org/P19-1226/) was accepted by ACL 2019.
 - March 2019, the second MRC challenge was held based on DuReader 2.0, including hard samples in the test set.
-- March 2018, the [ first MRC challenge]((https://aistudio.baidu.com/aistudio/competition/detail/1).) was held based on DuReader 2.0
 - April 2018, [DuReader 2.0](https://www.aclweb.org/anthology/W18-2605.pdf) was accepted by ACL 2018 at the Workshop on Machine Reading for Question Answering.
-
+- March 2018, the [ first MRC challenge]((https://aistudio.baidu.com/aistudio/competition/detail/1).) was held based on DuReader 2.0
 
 
 # Detailed Description
@@ -44,13 +50,21 @@ DuReader contains four datasets: `DuReader 2.0`, `DuReader Robust`, `DuReader Ye
 
 ### DuReader 2.0 :  Real question,  Real article,  Real answer
 
- [[Paper]](https://www.aclweb.org/anthology/W18-2605.pdf) [[Code]](https://github.com/baidu/DuReader) [[Leaderboard]](https://ai.baidu.com/broad/leaderboard?dataset=dureader) 
+ [[Paper]](https://www.aclweb.org/anthology/W18-2605.pdf) [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-2.0) [[Leaderboard]](https://ai.baidu.com/broad/leaderboard?dataset=dureader) 
 
 DuReader is a new large-scale real-world and human sourced MRC dataset in Chinese. DuReader focuses on real-world open-domain question answering. The advantages of DuReader over existing datasets are concluded as follows: Real question,  Real article,  Real answer, Real application scenario and Rich annotation.
+### KT-NET: Integrate knowledge into pre-trained LMs.  
+[[Paper]](https://aclanthology.org/P19-1226/) [[Code]](https://github.com/baidu/DuReader/tree/master/ACL2019-KTNET) [[Learderboard]](https://rajpurkar.github.io/SQuAD-explorer/) 
 
+KT-NET (Knowledge and Text fusion NET) is a machine reading comprehension (MRC) model which integrates knowledge from knowledge bases (KBs) into pre-trained contextualized representations. The model is proposed in ACL2019 paper Enhancing Pre-Trained Language Representations with Rich Knowledge for Machine Reading Comprehension.
+
+### D-NET: Model generalization
+[[Paper]](https://aclanthology.org/D19-5828/) [[Code]](https://github.com/baidu/DuReader/tree/master/MRQA2019-D-NET) [[Learderboard]](https://mrqa.github.io/2019/shared.html)
+
+D-NET is a simple system Baidu submitted for MRQA (Machine Reading for Question Answering) 2019 Shared Task that focused on generalization of machine reading comprehension (MRC) models. The system is built on a framework of pretraining and fine-tuning. The techniques of pre-trained language models and multi-task learning are explored to improve the generalization of MRC models. D-NET is ranked at top 1 of all the participants in terms of averaged F1 score. 
 ### DuReader Robust: Model Robustness
 
- [[Paper]](https://arxiv.org/abs/2004.11142) [[Code]](https://github.com/PaddlePaddle/Research/tree/master/NLP/DuReader-Robust-BASELINE) [[Learderboard]](https://aistudio.baidu.com/aistudio/competition/detail/49/) 
+ [[Paper]](https://arxiv.org/abs/2004.11142) [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-Robust) [[Learderboard]](https://aistudio.baidu.com/aistudio/competition/detail/49/) 
 
 DuReader Robust is designed to challenge MRC models from the following aspects: (1) over-sensitivity, (2) over-stability and (3) generalization. Besides, DuReader Robust has another advantage over previous datasets: questions and documents are from Baidu Search. It presents the robustness issues of MRC models when applying them to real-world scenarios.
 
@@ -62,7 +76,7 @@ Span-based MRC tasks adopt F1 and EM metrics to measure the difference between p
 
 ### DuReader Checklist: Natural Language Understanding Capabilities
 
- [[Code]](https://github.com/PaddlePaddle/Research/tree/master/NLP/DuReader-Checklist-BASELINE) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/66) 
+ [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-Checklist) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/66) 
 
 DuReader Checklist is a high-quality Chinese machine reading comprehension dataset for real application scenarios. It is designed to challenge the natural language understanding capabilities from multi-aspect via systematic evaluation (i.e. checklist), including understanding of vocabulary, phrase, semantic role, reasoning and so on.
 
