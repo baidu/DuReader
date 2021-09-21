@@ -191,7 +191,7 @@
  </tr>
 </table>
 
-更多详情请[访问]: (论文comming soon)。
+更多详情请访问[论文(comming soon)。
 
 # 基线系统
 ## 背景
