@@ -1,8 +1,9 @@
-# 千言-问题匹配鲁棒性评测基线
+## 数据集介绍
 
-我们基于预训练模型 ERNIE-Gram 结合正则化策略 [R-Drop](https://arxiv.org/abs/2106.14448) 在 [2021 CCF BDCI 千言-问题匹配鲁棒性评测](https://github.com/PaddlePaddle/PaddleNLP/tree/develop/examples/text_matching/question_matching) 竞赛上建立了 Baseline 方案和评测结果。
 
-## 赛题背景
+
+## 基线系统
+### 背景
 
 问题匹配（Question Matching）任务旨在判断两个自然问句之间的语义是否等价，是自然语言处理领域一个重要研究方向。问题匹配同时也具有很高的商业价值，在信息检索、智能客服等领域发挥重要作用。
 
@@ -17,7 +18,10 @@
 
 当前大多数问题匹配任务采用单一指标，在同分布的测试集上评测模型的好坏，这种评测方式可能夸大了模型能力，并且缺乏对模型鲁棒性的细粒度优劣势评估。本次评测关注问题匹配模型在真实应用场景中的鲁棒性，从词汇理解、句法结构、错别字、口语化、对话理解五个维度检测模型的能力，从而发现模型的不足之处，推动语义匹配技术的发展。本次竞赛主要基于[千言数据集](https://luge.ai)，采用的数据集包括哈尔滨工业大学（深圳）的LCQMC和BQ数据集、OPPO的小布对话短文本数据集以及百度的DuQM数据集，期望从多维度、多领域出发，全面评价模型的鲁棒性，进一步提升问题匹配技术的研究水平。本次竞赛将在第九届“CCF大数据与计算智能大赛”举办技术交流论坛和颁奖仪式，诚邀学术界和工业界的研究者和开发者参加本次竞赛！
 
-## 基线评测效果
+
+### 基线介绍
+我们基于预训练模型 ERNIE-Gram 结合正则化策略 [R-Drop](https://arxiv.org/abs/2106.14448) 在 [2021 CCF BDCI 千言-问题匹配鲁棒性评测](https://github.com/PaddlePaddle/PaddleNLP/tree/develop/examples/text_matching/question_matching) 竞赛上建立了 Baseline 方案和评测结果。
+
 本项目分别基于ERNIE-1.0、Bert-base-chinese、ERNIE-Gram 3 个中文预训练模型训练了单塔 Point-wise 的匹配模型, 基于 ERNIE-Gram 的模型效果显著优于其它 2 个预训练模型。  
 
 此外，在 ERNIE-Gram 模型基础上我们也对最新的正则化策略 [R-Drop](https://arxiv.org/abs/2106.14448) 进行了相关评测, [R-Drop](https://arxiv.org/abs/2106.14448) 策略的核心思想是针对同 1 个训练样本过多次前向网络得到的输出加上正则化的 Loss 约束。  
