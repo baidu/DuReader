@@ -1,8 +1,205 @@
-## 数据集介绍
+# 数据集介绍
+<table>
+ <tr>
+     <th>Coarse-grained Category</th>
+     <th> Fine-grained Category</th>
+     <th>Operation</th>  
+   <th>Example</th> 
+   <th>Label</th> 
+ </tr>
+ <tr >
+     <td rowspan="25">Lexical Semantics</td>
+     <td rowspan="11">Word & Phrase</td>
+     <td>insert n.</td>
+  <td>高血压吃什么好 / 高血压<font color=#0000FF>孕妇</font>吃什么好 </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>insert v.</td>
+  <td>  贵州旅游景点 / 贵州旅游景点<font color=#0000FF>预约</font>  </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>insert adj.</td>
+  <td>   吃芒果上火吗 / 吃<font color=#0000FF>青</font>芒果上火吗 </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>insert adv.</td>
+  <td>   为什么打嗝 / 为什么<font color=#0000FF>一直</font>打嗝     </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>replace n.</td>
+  <td> 脂肪肝能吃<font color=#DC143C>猪肝</font>吗 / 脂肪肝能吃<font color=#0000FF>猪肉</font>吗 </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>replace v.</td>
+  <td> <font color=#DC143C>下蹲</font>膝盖疼 / <font color=#0000FF>下跪</font>膝盖疼    </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>replace adj.</td>
+  <td>  喉咙<font color=#DC143C>哑</font>怎么办 / 喉咙<font color=#0000FF>疼</font>怎么办 </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>replace adv.</td>
+  <td>  <font color=#DC143C>总是</font>胸闷喘不上气 / <font color=#0000FF>偶尔</font>胸闷喘不上气     </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>replace num.</td>
+  <td>  血压<font color=#DC143C>130/100</font>高吗 / 血压<font color=#0000FF>120/110</font>高吗  </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>replace quantifier</td>
+  <td>  一<font color=#DC143C>枝</font>花多少钱 / 一<font color=#0000FF>束</font>花多少钱  </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>replace phrase</td>
+  <td>如何<font color=#DC143C>提高自己的记忆力</font> / 如何<font color=#0000FF>增加自己的实力</font>    </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td rowspan="4">Named Entity</td>
+     <td>replace loc.</td>
+  <td>  <font color=#DC143C>山西</font>春节习俗 /  <font color=#0000FF>陕西</font>春节习俗 </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>replace org.</td>
+  <td>   <font color=#DC143C>暨南大学</font>分数线 /  <font color=#0000FF>济南大学</font>分数线  </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>replace person</td>
+  <td> <font color=#DC143C>王健林</font>哪里人 /  <font color=#0000FF>王福林</font>哪里人 </td>
+  <td>N</td>
+ </tr>
+ <tr>
+     <td>replace product</td>
+  <td> <font color=#DC143C>iphone 6</font>多少钱 /  <font color=#0000FF>iphone6x</font>多少钱 </td>
+  <td>N</td>
+ </tr>
+ <tr>
+   <td rowspan="4">Synonym</td>
+    <td>replace n.</td>
+  <td> 吃<font color=#DC143C>猕猴桃</font>有什么功效 / 吃<font color=#0000FF>奇异果</font>有什么功效   </td>
+  <td>Y</td>
+</tr>
+<tr>
+     <td>replace v.</td>
+  <td>   如何<font color=#DC143C>预防</font>冻疮 / 如何<font color=#0000FF>防止</font>冻疮  </td>
+  <td>Y</td>
+</tr>
+<tr>
+     <td>replace adj.</td>
+  <td> 膝盖<font color=#DC143C>冷</font>什么原因 / 膝盖<font color=#0000FF>冰凉</font>什么原因 </td>
+  <td>Y</td>
+</tr>
+<tr>
+     <td>replace adv.</td>
+  <td>  虾不能和什么<font color=#DC143C>一起</font>吃 / 虾不能和什么<font color=#0000FF>同时</font>吃 </td>
+  <td>Y</td>
+</tr>
+<tr>
+   <td>Antonym</td>
+     <td>replace adj.</td>
+  <td> 只吃蔬菜会让皮肤变<font color=#DC143C>好</font>吗 / 只吃蔬菜会让皮肤变<font color=#0000FF>差</font>吗    </td>
+  <td>N</td>
+</tr>
+<tr>
+   <td rowspan="3">Negation</td>
+     <td>negate v.</td>
+  <td>  为什么宝宝哭 / 为什么宝宝<font color=#0000FF>不</font>哭  </td>
+  <td>N</td>
+</tr>
+<tr>
+     <td>negate adj.</td>
+  <td>    为什么苹果是红的 / 为什么苹果<font color=#0000FF>不是</font>红的   </td>
+  <td>N</td>
+</tr>
+<tr>
+     <td>double neg.</td>
+  <td> <font color=#DC143C>激动</font>怎么办 / <font color=#0000FF>无法平静</font>怎么办 </td>
+  <td>Y</td>
+</tr>
+<tr>
+   <td rowspan="2">Temporal</td>
+     <td>insert</td>
+  <td>  2007年的修仙小说 / 2007年<font color=#0000FF>以前的</font>修仙小说   </td>
+  <td>N</td>
+</tr>
+<tr>
+     <td>replace</td>
+  <td> 我<font color=#DC143C>在</font>吃饭 / 我<font color=#0000FF>刚刚在</font>吃饭</td>
+  <td>N</td>
+</tr>
+<tr>
+     <td rowspan="5">Syntactic Structure</td>
+     <td>Symmetry</td>
+     <td>-</th>
+  <td><font color=#DC143C>鱼</font>和<font color=#DC143C>鸡蛋</font>能一起吃吗 / <font color=#0000FF>鸡蛋</font>和<font color=#0000FF>鱼</font>能一起吃吗 </td>
+  <td>Y</td>
+</tr>
+ <tr>
+  <td rowspan="1">Asymmetry</td>
+     <td>-</td>
+  <td> <font color=#DC143C>北京</font>飞<font color=#DC143C>上海</font>航班 / <font color=#0000FF>上海</font>飞<font color=#0000FF>北京</font>航班  </td>
+  <td>N</td>
+ </tr>
+ <tr>
+      <td rowspan="1">Negative Asymmetry</td>
+     <td>-</td>
+  <td> <font color=#DC143C>男人</font>比<font color=#DC143C>女人</font>更<font color=#DC143C>高</font>吗 / <font color=#0000FF>女人</font>比<font color=#0000FF>男人</font>更<font color=#0000FF>矮</font>吗  </td>
+  <td>Y</td>
+ </tr>
+ <tr>
+     <td rowspan="2">Active/Passive</td>
+       <td>-</td>
+  <td> 我撞了别人怎么办 / 我<font color=#0000FF>被</font>别人撞了怎么办  </td>
+  <td>N</td>
+ </tr>
+ <tr>
+       <td>-</td>
+  <td> <font color=#DC143C>被</font>蜜蜂蛰了怎么处理 / 密蜂蛰了怎么处理   </td>
+  <td>Y</td>
+ </tr>
+ <tr>
+     <td >Misspelling</td>
+ <td>-</td>
+ <td>-</td>
+  <td>小孩上吐下<font color=#DC143C>泻</font> / 小孩上吐下<font color=#0000FF>泄</font>  </td>
+  <td>Y</td>
+ </tr>
+ <tr>
+     <td >Speech Filler</td>
+      <td>-</td>
+   <td>-</td>
+  <td> 明孝陵景区怎么走 / <font color=#0000FF>嗨 你知道</font>明孝陵风景区怎么走吗 </td>
+  <td>Y</td>
+ </tr>
+  <tr>
+     <td  rowspan="2" >Conversational Semantics</td>
+      <td>-</td>
+   <td>-</td>
+  <td>是先生还是小姐猜一猜我 / 猜猜我是女生还是男生   </td>
+  <td>Y</td>
+ </tr>
+ <tr>
+       <td>-</td>
+       <td>-</td>
+  <td> 怎么截图发送不了 / 这微信怎么截图截不了啊   </td>
+  <td>N</td>
+ </tr>
+</table>
 
 
-
-## 基线系统
+# 基线系统
 ### 背景
 
 问题匹配（Question Matching）任务旨在判断两个自然问句之间的语义是否等价，是自然语言处理领域一个重要研究方向。问题匹配同时也具有很高的商业价值，在信息检索、智能客服等领域发挥重要作用。
