@@ -195,13 +195,9 @@
 
 # 基线系统
 ## 背景
-我们基于预训练模型 ERNIE-Gram 结合正则化策略 [R-Drop](https://arxiv.org/abs/2106.14448) 在 [2021 CCF BDCI 千言-问题匹配鲁棒性评测](https://github.com/PaddlePaddle/PaddleNLP/tree/develop/examples/text_matching/question_matching) 竞赛上建立了 Baseline 方案和评测结果。
+我们基于预训练模型 ERNIE-Gram 结合正则化策略 [R-Drop](https://arxiv.org/abs/2106.14448) 在 [2021 CCF BDCI 千言-问题匹配鲁棒性评测](https://github.com/PaddlePaddle/PaddleNLP/tree/develop/examples/text_matching/question_matching) 竞赛上建立了 Baseline 方案和评测结果。本次竞赛主要基于[千言数据集](https://luge.ai)，采用的数据集包括哈尔滨工业大学（深圳）的LCQMC和BQ数据集、OPPO的小布对话短文本数据集以及百度的DuQM数据集，期望从多维度、多领域出发，全面评价模型的鲁棒性，进一步提升问题匹配技术的研究水平。
 
-本次竞赛主要基于[千言数据集](https://luge.ai)，采用的数据集包括哈尔滨工业大学（深圳）的LCQMC和BQ数据集、OPPO的小布对话短文本数据集以及百度的DuQM数据集，期望从多维度、多领域出发，全面评价模型的鲁棒性，进一步提升问题匹配技术的研究水平。
-
-本项目分别基于ERNIE-1.0、Bert-base-chinese、ERNIE-Gram 3 个中文预训练模型训练了单塔 Point-wise 的匹配模型, 基于 ERNIE-Gram 的模型效果显著优于其它 2 个预训练模型。  
-
-此外，在 ERNIE-Gram 模型基础上我们也对最新的正则化策略 [R-Drop](https://arxiv.org/abs/2106.14448) 进行了相关评测, [R-Drop](https://arxiv.org/abs/2106.14448) 策略的核心思想是针对同 1 个训练样本过多次前向网络得到的输出加上正则化的 Loss 约束。  
+本项目分别基于ERNIE-1.0、Bert-base-chinese、ERNIE-Gram 3 个中文预训练模型训练了单塔 Point-wise 的匹配模型, 基于 ERNIE-Gram 的模型效果显著优于其它 2 个预训练模型。  此外，在 ERNIE-Gram 模型基础上我们也对最新的正则化策略 [R-Drop](https://arxiv.org/abs/2106.14448) 进行了相关评测, [R-Drop](https://arxiv.org/abs/2106.14448) 策略的核心思想是针对同 1 个训练样本过多次前向网络得到的输出加上正则化的 Loss 约束。  
 
 我们开源了效果最好的 2 个策略对应模型的 checkpoint 作为本次比赛的基线方案: 基于 ERNIE-Gram 预训练模型 R-Drop 系数分别为 0.0 和 0.1 的 2 个模型, 用户可以下载相应的模型来复现我们的评测结果。  
 
