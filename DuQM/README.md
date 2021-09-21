@@ -195,10 +195,9 @@
 
 # 基线系统
 ## 背景
-本次竞赛主要基于[千言数据集](https://luge.ai)，采用的数据集包括哈尔滨工业大学（深圳）的LCQMC和BQ数据集、OPPO的小布对话短文本数据集以及百度的DuQM数据集，期望从多维度、多领域出发，全面评价模型的鲁棒性，进一步提升问题匹配技术的研究水平。本次竞赛将在第九届“CCF大数据与计算智能大赛”举办技术交流论坛和颁奖仪式，诚邀学术界和工业界的研究者和开发者参加本次竞赛！
-
-
 我们基于预训练模型 ERNIE-Gram 结合正则化策略 [R-Drop](https://arxiv.org/abs/2106.14448) 在 [2021 CCF BDCI 千言-问题匹配鲁棒性评测](https://github.com/PaddlePaddle/PaddleNLP/tree/develop/examples/text_matching/question_matching) 竞赛上建立了 Baseline 方案和评测结果。
+
+本次竞赛主要基于[千言数据集](https://luge.ai)，采用的数据集包括哈尔滨工业大学（深圳）的LCQMC和BQ数据集、OPPO的小布对话短文本数据集以及百度的DuQM数据集，期望从多维度、多领域出发，全面评价模型的鲁棒性，进一步提升问题匹配技术的研究水平。
 
 本项目分别基于ERNIE-1.0、Bert-base-chinese、ERNIE-Gram 3 个中文预训练模型训练了单塔 Point-wise 的匹配模型, 基于 ERNIE-Gram 的模型效果显著优于其它 2 个预训练模型。  
 
