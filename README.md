@@ -23,12 +23,12 @@ DuReader:
 
 
 
-`DuReader Robust`, `DuReader Yes/No`, `DuReader Checklist` can be downloaded at [qianyan official website](https://www.luge.ai/). `DuReader 2.0` can be downloaded by following the method in `DuReader-2.0/README.md` at this repository.
+`DuReader Robust`, `DuReader Yes/No`, `DuReader Checklist`, `DuQM`can be downloaded at [qianyan official website](https://www.luge.ai/). `DuReader 2.0` can be downloaded by following the method in `DuReader-2.0/README.md` at this repository.
 
 
 
 # News
-
+- September 2021, DuQM was included in [qianyan](https://www.luge.ai/).
 - June 2021, DuReader Robust, DuReader Yes/No and DuReader Checklist were included in [qianyan](https://www.luge.ai/).
 - May 2021, [DuReader Robust](https://arxiv.org/abs/2004.11142) (short paper) was accepted by ACL 2021.
 - March 2021, DuReader Checklist was released, holding the [DuReader Checklist challenge](https://aistudio.baidu.com/aistudio/competition/detail/66?isFromLuge=true). 
