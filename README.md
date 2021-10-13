@@ -4,14 +4,9 @@
 
 **DuReader focus on the benchmarks and models of machine reading comprehension for question answering.**
 
-DuReader:
+Dataset:
 
 > `DuReader 2.0`: A new large-scale real-world and human sourced MRC dataset [[Paper]](https://www.aclweb.org/anthology/W18-2605.pdf) [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-2.0) [[Leaderboard]](https://ai.baidu.com/broad/leaderboard?dataset=dureader) 
-
-> `KT-NET`: A machine reading comprehension (MRC) model which integrates knowledge from knowledge bases (KBs) into pre-trained contextualized representations.   [[Paper]](https://aclanthology.org/P19-1226/) [[Code]](https://github.com/baidu/DuReader/tree/master/ACL2019-KTNET) [[Learderboard]](https://rajpurkar.github.io/SQuAD-explorer/) 
-
-> `D-NET`: A simple pre-training and fine-tuning framework which focused on the generalization of machine reading comprehension (MRC) models.    [[Paper]](https://aclanthology.org/D19-5828/) [[Code]](https://github.com/baidu/DuReader/tree/master/MRQA2019-D-NET) [[Learderboard]](https://mrqa.github.io/2019/shared.html) 
-
 
 > `DuReader Robust`: A dataset challenging models in (1)over-sensitivity, (2)over-stability and (3)generalization.   [[Paper]](https://arxiv.org/abs/2004.11142) [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-Robust) [[Learderboard]](https://aistudio.baidu.com/aistudio/competition/detail/49/) 
 
@@ -22,13 +17,16 @@ DuReader:
 > `DuQM`: Linguistically Perturbed Natural Questions for Evaluating theRobustness of Question Matching Models.[[Code]](https://github.com/baidu/DuReader/tree/master/DuQM) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/116)
 
 
-
 `DuReader Robust`, `DuReader Yes/No`, `DuReader Checklist`, `DuQM`can be downloaded at [qianyan official website](https://www.luge.ai/). `DuReader 2.0` can be downloaded by following the method in `DuReader-2.0/README.md` at this repository.
 
+Models:
 
+> `KT-NET`: A machine reading comprehension (MRC) model which integrates knowledge from knowledge bases (KBs) into pre-trained contextualized representations.   [[Paper]](https://aclanthology.org/P19-1226/) [[Code]](https://github.com/baidu/DuReader/tree/master/ACL2019-KTNET) [[Learderboard]](https://rajpurkar.github.io/SQuAD-explorer/) 
+
+> `D-NET`: A simple pre-training and fine-tuning framework which focused on the generalization of machine reading comprehension (MRC) models.    [[Paper]](https://aclanthology.org/D19-5828/) [[Code]](https://github.com/baidu/DuReader/tree/master/MRQA2019-D-NET) [[Learderboard]](https://mrqa.github.io/2019/shared.html) 
 
 # News
-- September 2021, DuQM was included in [qianyan](https://www.luge.ai/).
+- September 2021, we released DuQM that is a Chinese dataset of linguistically perturbed natural questions for evaluating the robustness of question matching models, and it was included in [qianyan](https://www.luge.ai/).
 - June 2021, DuReader Robust, DuReader Yes/No and DuReader Checklist were included in [qianyan](https://www.luge.ai/).
 - May 2021, [DuReader Robust](https://arxiv.org/abs/2004.11142) (short paper) was accepted by ACL 2021.
 - March 2021, DuReader Checklist was released, holding the [DuReader Checklist challenge](https://aistudio.baidu.com/aistudio/competition/detail/66?isFromLuge=true). 
