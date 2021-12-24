@@ -14,7 +14,7 @@ Dataset:
 
 > `DuReader Checklist`: A dataset challenging model understanding capabilities in vocabulary, phrase, semantic role, reasoning. [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-Checklist) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/66) 
 
-> `DuQM`: Linguistically Perturbed Natural Questions for Evaluating theRobustness of Question Matching Models.[[Code]](https://github.com/baidu/DuReader/tree/master/DuQM) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/116)
+> `DuQM`: Linguistically Perturbed Natural Questions for Evaluating theRobustness of Question Matching Models.[[Paper]](https://arxiv.org/pdf/2112.08609.pdf)[[Code]](https://github.com/baidu/DuReader/tree/master/DuQM) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/116)
 
 
 `DuReader Robust`, `DuReader Yes/No`, `DuReader Checklist`, `DuQM`can be downloaded at [qianyan official website](https://www.luge.ai/). `DuReader 2.0` can be downloaded by following the method in `DuReader-2.0/README.md` at this repository.
@@ -80,8 +80,12 @@ Span-based MRC tasks adopt F1 and EM metrics to measure the difference between p
 
 DuReader Checklist is a high-quality Chinese machine reading comprehension dataset for real application scenarios. It is designed to challenge the natural language understanding capabilities from multi-aspect via systematic evaluation (i.e. checklist), including understanding of vocabulary, phrase, semantic role, reasoning and so on.
 
+### DuQM: Linguistically Perturbed Natural Questions for Evaluating the Robustness of Question Matching Models
+
+[[Paper]](https://arxiv.org/pdf/2112.08609.pdf)[[Code]](https://github.com/baidu/DuReader/tree/master/DuQM) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/116)
 
 
+DuQM is a Chinese question matching robust dataset, which contains natural questions with linguistic perturbations to evaluate the robustness of question matching models. DuQM is designed to be fine-grained, diverse and natural. And it contains 3 categories and 13 subcategories with 32 linguistic perturbations.
 
 # Dataset and Evaluation Tools
 
