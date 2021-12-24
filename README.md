@@ -80,7 +80,7 @@ Span-based MRC tasks adopt F1 and EM metrics to measure the difference between p
 
 DuReader Checklist is a high-quality Chinese machine reading comprehension dataset for real application scenarios. It is designed to challenge the natural language understanding capabilities from multi-aspect via systematic evaluation (i.e. checklist), including understanding of vocabulary, phrase, semantic role, reasoning and so on.
 
-### DuQM: Question Matching Model Robustness
+### DuQM: Linguistically Perturbed Natural Questions for Evaluating the Robustness of Question Matching Models
 
 [[Paper]](https://arxiv.org/pdf/2112.08609.pdf)[[Code]](https://github.com/baidu/DuReader/tree/master/DuQM) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/116)
 
