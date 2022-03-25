@@ -17,7 +17,7 @@ Coming soon...
 
 ## Baseline System
 
-The baseline system is based on [RocketQA](https://aclanthology.org/2021.naacl-main.466.pdf) and available in this [repository](https://github.com/quyingqi/RocketQA/tree/main/research/DuReader-Retrieval-Baseline).
+The baseline system is based on [RocketQA](https://aclanthology.org/2021.naacl-main.466.pdf) and available in this [repository](https://github.com/PaddlePaddle/RocketQA/tree/main/research/DuReader-Retrieval-Baseline).
 
 
 
