@@ -6,17 +6,17 @@
 
 Dataset:
 
-> `DuReader 2.0`: A new large-scale real-world and human sourced MRC dataset [[Paper]](https://www.aclweb.org/anthology/W18-2605.pdf) [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-2.0) [[Leaderboard]](https://ai.baidu.com/broad/leaderboard?dataset=dureader) 
-
-> `DuReader Robust`: A dataset challenging models in (1)over-sensitivity, (2)over-stability and (3)generalization.   [[Paper]](https://arxiv.org/abs/2004.11142) [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-Robust) [[Learderboard]](https://aistudio.baidu.com/aistudio/competition/detail/49/) 
-
-> `DuReader Yes/No`: A dataset challenging models in opinion polarity judgment. [[Code]](https://github.com/PaddlePaddle/PaddleNLP/tree/develop/examples/machine_reading_comprehension/DuReader-yesno) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/49/)
-
-> `DuReader Checklist`: A dataset challenging model understanding capabilities in vocabulary, phrase, semantic role, reasoning. [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-Checklist) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/66) 
+> `DuReader Retrieval`: A large-scale Chinese dataset for passage retrieval. [[Paper]](https://arxiv.org/abs/2203.10232)[[Code]](https://github.com/PaddlePaddle/RocketQA/tree/main/research/DuReader-Retrieval-Baseline) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/157/0/introduction)
 
 > `DuQM`: Linguistically Perturbed Natural Questions for Evaluating theRobustness of Question Matching Models.[[Paper]](https://arxiv.org/pdf/2112.08609.pdf)[[Code]](https://github.com/baidu/DuReader/tree/master/DuQM) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/116)
 
-> `DuReader Retrieval`: A large-scale Chinese dataset for passage retrieval. [[Paper]](https://arxiv.org/abs/2203.10232)[[Code]](https://github.com/PaddlePaddle/RocketQA/tree/main/research/DuReader-Retrieval-Baseline) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/157/0/introduction)
+> `DuReader Checklist`: A dataset challenging model understanding capabilities in vocabulary, phrase, semantic role, reasoning. [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-Checklist) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/66) 
+
+> `DuReader Yes/No`: A dataset challenging models in opinion polarity judgment. [[Code]](https://github.com/PaddlePaddle/PaddleNLP/tree/develop/examples/machine_reading_comprehension/DuReader-yesno) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/49/)
+
+> `DuReader Robust`: A dataset challenging models in (1)over-sensitivity, (2)over-stability and (3)generalization.   [[Paper]](https://arxiv.org/abs/2004.11142) [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-Robust) [[Learderboard]](https://aistudio.baidu.com/aistudio/competition/detail/49/) 
+
+> `DuReader 2.0`: A new large-scale real-world and human sourced MRC dataset [[Paper]](https://www.aclweb.org/anthology/W18-2605.pdf) [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-2.0) [[Leaderboard]](https://ai.baidu.com/broad/leaderboard?dataset=dureader) 
 
 `DuReader Robust`, `DuReader Yes/No`, `DuReader Checklist`, `DuQM`can be downloaded at [qianyan official website](https://www.luge.ai/). `DuReader 2.0` can be downloaded by following the method in `DuReader-2.0/README.md` at this repository.
 
@@ -27,8 +27,8 @@ Models:
 > `D-NET`: A simple pre-training and fine-tuning framework which focused on the generalization of machine reading comprehension (MRC) models.    [[Paper]](https://aclanthology.org/D19-5828/) [[Code]](https://github.com/baidu/DuReader/tree/master/MRQA2019-D-NET) [[Learderboard]](https://mrqa.github.io/2019/shared.html) 
 
 # News
-- March 2022, DuReader Retrieval was released, holding the [Passage retrieval challenge](https://aistudio.baidu.com/aistudio/competition/detail/157/0/introduction).
-- September 2021, we released DuQM that is a Chinese dataset of linguistically perturbed natural questions for evaluating the robustness of question matching models, and it was included in [qianyan](https://www.luge.ai/).
+- March 2022, [DuReader Retrieval](https://github.com/baidu/DuReader/tree/master/DuReader-Retrieval) was released, holding the [Passage retrieval challenge](https://aistudio.baidu.com/aistudio/competition/detail/157/0/introduction).
+- September 2021, we released [DuQM](https://github.com/baidu/DuReader/tree/master/DuQM) that is a Chinese dataset of linguistically perturbed natural questions for evaluating the robustness of question matching models, and it was included in [qianyan](https://www.luge.ai/).
 - June 2021, DuReader Robust, DuReader Yes/No and DuReader Checklist were included in [qianyan](https://www.luge.ai/).
 - May 2021, [DuReader Robust](https://arxiv.org/abs/2004.11142) was accepted by ACL 2021.
 - March 2021, DuReader Checklist was released, holding the [DuReader Checklist challenge](https://aistudio.baidu.com/aistudio/competition/detail/66?isFromLuge=true). 
