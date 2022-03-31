@@ -16,6 +16,7 @@ Dataset:
 
 > `DuQM`: Linguistically Perturbed Natural Questions for Evaluating theRobustness of Question Matching Models.[[Paper]](https://arxiv.org/pdf/2112.08609.pdf)[[Code]](https://github.com/baidu/DuReader/tree/master/DuQM) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/116)
 
+> `DuReader Retrieval`: A large-scale Chinese dataset for passage retrieval. [[Paper]](https://arxiv.org/abs/2203.10232)[[Code]](https://github.com/PaddlePaddle/RocketQA/tree/main/research/DuReader-Retrieval-Baseline) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/157/0/introduction)
 
 `DuReader Robust`, `DuReader Yes/No`, `DuReader Checklist`, `DuQM`can be downloaded at [qianyan official website](https://www.luge.ai/). `DuReader 2.0` can be downloaded by following the method in `DuReader-2.0/README.md` at this repository.
 
@@ -26,9 +27,10 @@ Models:
 > `D-NET`: A simple pre-training and fine-tuning framework which focused on the generalization of machine reading comprehension (MRC) models.    [[Paper]](https://aclanthology.org/D19-5828/) [[Code]](https://github.com/baidu/DuReader/tree/master/MRQA2019-D-NET) [[Learderboard]](https://mrqa.github.io/2019/shared.html) 
 
 # News
+- March 2022, DuReader Retrieval was released, holding the [Passage retrieval challenge](https://aistudio.baidu.com/aistudio/competition/detail/157/0/introduction).
 - September 2021, we released DuQM that is a Chinese dataset of linguistically perturbed natural questions for evaluating the robustness of question matching models, and it was included in [qianyan](https://www.luge.ai/).
 - June 2021, DuReader Robust, DuReader Yes/No and DuReader Checklist were included in [qianyan](https://www.luge.ai/).
-- May 2021, [DuReader Robust](https://arxiv.org/abs/2004.11142) (short paper) was accepted by ACL 2021.
+- May 2021, [DuReader Robust](https://arxiv.org/abs/2004.11142) was accepted by ACL 2021.
 - March 2021, DuReader Checklist was released, holding the [DuReader Checklist challenge](https://aistudio.baidu.com/aistudio/competition/detail/66?isFromLuge=true). 
 - March 2020, DuReader Robust was released, holding the [DuReader Robust challenge](https://aistudio.baidu.com/aistudio/competition/detail/28?isFromCcf=true). 
 - December 2019, DuReader Yes/No was released, holding the [ DuReader Yes/No challenge](https://ai.xm.gov.cn/competition/project-detail.html?id=1aedc41540e440a59f86a4c543635f64&competeId=0000075d26e840b1b9ffd10633d6a9bf). After that, DuReader Yes/No [Individual Challenge](https://aistudio.baidu.com/aistudio/competition/detail/25) and [Team Challenge](https://aistudio.baidu.com/aistudio/competition/detail/26) were held.
