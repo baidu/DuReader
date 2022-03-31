@@ -89,6 +89,13 @@ DuReader Checklist is a high-quality Chinese machine reading comprehension datas
 
 DuQM is a Chinese question matching robust dataset, which contains natural questions with linguistic perturbations to evaluate the robustness of question matching models. DuQM is designed to be fine-grained, diverse and natural. And it contains 3 categories and 13 subcategories with 32 linguistic perturbations.
 
+### DuReader Retrieval: A large-scale Chinese dataset for passage retrieval from web search engine
+
+[[Paper]](https://arxiv.org/abs/2203.10232)[[Code]](https://github.com/PaddlePaddle/RocketQA/tree/main/research/DuReader-Retrieval-Baseline) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/157/0/introduction)
+
+DuReader Retrieval is a large-scale Chinese dataset for passage retrieval from web search engine. The dataset contains more than 90K queries and over 8M unique passages from realistic data sources. 
+
+
 # Dataset and Evaluation Tools
 
 We make public a dataset loading and evaluation tool named `qianyan`. You can use this package easily by following the [qianyan repo](https://console.cloud.baidu-int.com/devops/icode/repos/baidu/personal-code/qianyan/tree/master).
