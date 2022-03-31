@@ -1,5 +1,14 @@
 # DuReader-Retrieval
 
+## 背景 Background
+段落检索(passage retrieval)是指从大规模语料库中找出和用户查询最相关段落的过程。段落检索作为许多自然语言处理任务中的关键组件，是自然语言处理和人工智能领域的重要前沿课题，近年来受到了学术界和工业界的广泛关注。
+
+Passage retrieval is the process of obtaining the most relevant passages to the user query from a large-scale text corpus. As a key component in many natural language processing tasks, passage retrieval is an important cutting-edge topic in the fields of natural language processing and artificial intelligence, which has received wide attention from both academia and industry.
+
+近年来，得益于带有高质量人工标注的大规模段落检索数据集的出现，基于稠密向量的表示学习方法在段落检索领域取得了重大进展。 然而，由于缺乏相应的大规模中文检索数据集，在中文场景下应用稠密检索模型的相关研究受到了极大的限制。为了推动中文段落检索技术的发展，我们利用真实场景下的用户搜索日志，建立了首个大规模高质量中文段落检索数据集：DuReader_retrieval，并采用多路集成召回标注及训练、测试集语义去重等策略，提升了开发集和测试集的标注质量，保证评估的效果。DuReader_retrieval中的样本均来自于实际的应用场景，考察点丰富多样，覆盖了真实应用场景下诸多难以解决的问题。
+
+In recent years, dense representation learning has made significant progress in the field of passage retrieval due to the advent of the large-scale dataset with high-quality human annotations. However, due to the lack of corresponding Chinese large-scale datasets, relevant studies on applying dense retrieval models in the Chinese context are restricted. In order to remove this barrier, based on the logs submitted by real users to Baidu Search, we build the first large-scale Chinese passage retrieval dataset: DuReader_retrieval, and improve its quality by ensemble retrieval with human annotation, removing the semantically similar questions, etc. The data in DuReader_retrieval all come from actual application scenarios, which have various evaluation points, covering many challenges in real applications.
+
 ## 任务简介 Task Description
 给定一个问题q 及其所有相关段落的集合 Pq，其中p∈Pq 为与q相关的单条段落，以及一个包含所有候选段落的集合 P。参赛系统的目标是根据 q，从P中检索出所有与q相关的段落Pq，并将Pq 中的段落尽可能排序到检索结果列表靠前的位置。数据集中的每个样本为 <q,Pp> ，例如：
 
