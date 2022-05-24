@@ -6,9 +6,11 @@
 
 Dataset:
 
+> `DuReader-vis`: The first Chinese Open-domain Document Visual Question Answering (Open-Domain DocVQA) dataset. [[Paper]](https://aclanthology.org/2022.findings-acl.105.pdf) 
+
 > `DuReader Retrieval`: A large-scale Chinese dataset for passage retrieval. [[Paper]](https://arxiv.org/abs/2203.10232)[[Code]](https://github.com/PaddlePaddle/RocketQA/tree/main/research/DuReader-Retrieval-Baseline) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/157/0/introduction)
 
-> `DuQM`: Linguistically Perturbed Natural Questions for Evaluating theRobustness of Question Matching Models.[[Paper]](https://arxiv.org/pdf/2112.08609.pdf)[[Code]](https://github.com/baidu/DuReader/tree/master/DuQM) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/116)
+> `DuQM`: Linguistically Perturbed Natural Questions for Evaluating the Robustness of Question Matching Models.[[Paper]](https://arxiv.org/pdf/2112.08609.pdf)[[Code]](https://github.com/baidu/DuReader/tree/master/DuQM) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/116)
 
 > `DuReader Checklist`: A dataset challenging model understanding capabilities in vocabulary, phrase, semantic role, reasoning. [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-Checklist) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/66) 
 
@@ -18,7 +20,7 @@ Dataset:
 
 > `DuReader 2.0`: A new large-scale real-world and human sourced MRC dataset [[Paper]](https://www.aclweb.org/anthology/W18-2605.pdf) [[Code]](https://github.com/baidu/DuReader/tree/master/DuReader-2.0) [[Leaderboard]](https://ai.baidu.com/broad/leaderboard?dataset=dureader) 
 
-`DuReader Robust`, `DuReader Yes/No`, `DuReader Checklist`, `DuQM`can be downloaded at [qianyan official website](https://www.luge.ai/). `DuReader 2.0` can be downloaded by following the method in `DuReader-2.0/README.md` at this repository.
+`DuReader Robust`, `DuReader Yes/No`, `DuReader Checklist`, `DuQM`can be downloaded at [qianyan official website](https://www.luge.ai/). `DuReader-vis` can be downloaded by following the method in `DuReader-vis/README.md` at this repository. `DuReader 2.0` can be downloaded by following the method in `DuReader-2.0/README.md` at this repository.
 
 Models:
 
@@ -27,6 +29,7 @@ Models:
 > `D-NET`: A simple pre-training and fine-tuning framework which focused on the generalization of machine reading comprehension (MRC) models.    [[Paper]](https://aclanthology.org/D19-5828/) [[Code]](https://github.com/baidu/DuReader/tree/master/MRQA2019-D-NET) [[Learderboard]](https://mrqa.github.io/2019/shared.html) 
 
 # News
+- May 2022, [DuReader-vis](https://aclanthology.org/2022.findings-acl.105.pdf) was accepted by ACL 2022 Findings.
 - March 2022, [DuReader Retrieval](https://github.com/baidu/DuReader/tree/master/DuReader-Retrieval) was released, holding the [Passage retrieval challenge](https://aistudio.baidu.com/aistudio/competition/detail/157/0/introduction).
 - September 2021, we released [DuQM](https://github.com/baidu/DuReader/tree/master/DuQM) that is a Chinese dataset of linguistically perturbed natural questions for evaluating the robustness of question matching models, and it was included in [qianyan](https://www.luge.ai/).
 - June 2021, DuReader Robust, DuReader Yes/No and DuReader Checklist were included in [qianyan](https://www.luge.ai/).
@@ -43,7 +46,7 @@ Models:
 
 # Detailed Description
 
-DuReader contains four datasets: `DuReader 2.0`, `DuReader Robust`, `DuReader Yes/No` and `DuReader Checklist`. The main features of these datasets include:
+DuReader contains four datasets: `DuReader 2.0`, `DuReader Robust`, `DuReader Yes/No` , `DuReader Checklist` and `DuReader-vis`. The main features of these datasets include:
 
 - Real question,  Real article,  Real answer, Real application scenario;
 - Rich question types, including entity, number, opinion, etc;
@@ -94,6 +97,12 @@ DuQM is a Chinese question matching robust dataset, which contains natural quest
 [[Paper]](https://arxiv.org/abs/2203.10232)[[Code]](https://github.com/PaddlePaddle/RocketQA/tree/main/research/DuReader-Retrieval-Baseline) [[Leaderboard]](https://aistudio.baidu.com/aistudio/competition/detail/157/0/introduction)
 
 DuReader Retrieval is a large-scale Chinese dataset for passage retrieval from web search engine. The dataset contains more than 90K queries and over 8M unique passages from realistic data sources. 
+
+### DuReader-vis: A Chinese Dataset for Open-domain Document Visual Question Answering
+
+ [[Paper]](https://aclanthology.org/2022.findings-acl.105.pdf) 
+
+DuReader-vis is the first Chinese Open-domain DocVQA dataset from web search engine. The dataset contains more than 15K labeled question-document pairs and over 158K unique documents from realistic data sources.
 
 
 # Dataset and Evaluation Tools
