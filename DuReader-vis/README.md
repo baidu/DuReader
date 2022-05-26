@@ -4,7 +4,7 @@ Visual Question Answering](https://aclanthology.org/2022.findings-acl.105.pdf) A
 
 # Introduction
 
-![Figure 1: Comparison between Open Domain QA and Open Domain DocVQA](images/intro-vis.png)
+![Figure 1](images/intro-vis.png)
 
 Open-domain question answering (Open-domain QA) ( Figure (a)) has been used widely in many applications, which usually takes clean texts extracted from various formats of documents (e.g., web pages, PDFs, or Word documents) as the information source. However, designing different text extraction approaches is time-consuming and not scalable.
 
